@@ -3,12 +3,15 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Hono } from "hono";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { buildMemoryThoughtFilter, reviewTransition, scopeMatches } from "./policy.ts";
+import { READ_ONLY_ERROR, readOnlyEnabledFromEnv, shouldBlockWriteEndpoint } from "./read-only.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY")!;
 const MCP_ACCESS_KEY = Deno.env.get("MCP_ACCESS_KEY")!;
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
+const AGENT_MEMORY_READ_ONLY = readOnlyEnabledFromEnv();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -201,6 +204,11 @@ function auth(c: { req: { header: (name: string) => string | undefined; url: str
   return provided && provided === MCP_ACCESS_KEY;
 }
 
+function readOnlyBlock(c: { json: (obj: unknown, status?: number, headers?: Record<string, string>) => Response }, method: string, endpointPattern: string): Response | null {
+  if (!shouldBlockWriteEndpoint(method, endpointPattern, AGENT_MEMORY_READ_ONLY)) return null;
+  return c.json(READ_ONLY_ERROR, 403, corsHeaders);
+}
+
 function unsafeReasons(text: string): string[] {
   const reasons: string[] = [];
   if (/-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----/.test(text)) reasons.push("private_key");
@@ -235,15 +243,6 @@ function memoryRows(payload: z.infer<typeof writebackSchema>) {
     });
   }
   return rows;
-}
-
-function scopeMatches(memory: AgentMemory, req: z.infer<typeof recallSchema>): boolean {
-  if (memory.workspace_id !== req.workspace_id) return false;
-  if (req.scope.project_only && req.project_id && memory.project_id !== req.project_id) return false;
-  if (!req.scope.include_stale && ["stale", "superseded", "rejected", "disputed"].includes(memory.lifecycle_status)) return false;
-  if (!req.scope.include_unconfirmed && memory.requires_user_confirmation && memory.review_status === "pending") return false;
-  if (memory.visibility === "personal" && req.scope.visibility !== "personal") return false;
-  return true;
 }
 
 function rankMemory(memory: AgentMemory, similarity = 0): number {
@@ -337,6 +336,9 @@ app.use("*", async (c, next) => {
 app.get("/health", (c) => c.json({ ok: true, service: "agent-memory-api", version: "0.1.0" }, 200, corsHeaders));
 
 app.post("/recall", async (c) => {
+  const blocked = readOnlyBlock(c, "POST", "/recall");
+  if (blocked) return blocked;
+
   const parsed = recallSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json({ error: "Invalid recall payload", details: parsed.error.flatten() }, 400, corsHeaders);
   const req = parsed.data;
@@ -352,20 +354,21 @@ app.post("/recall", async (c) => {
 
   const similarityByThought = new Map<string, number>();
   for (const item of matches || []) similarityByThought.set(item.id, item.similarity);
-  const thoughtIds = Array.from(similarityByThought.keys());
+  const thoughtFilter = buildMemoryThoughtFilter(Array.from(similarityByThought.keys()));
+  let rawMemories: AgentMemory[] = [];
+  if (thoughtFilter.mode === "thought_ids") {
+    const { data, error: memoryError } = await supabase
+      .from("agent_memories")
+      .select("*")
+      .eq("workspace_id", req.workspace_id)
+      .in("thought_id", thoughtFilter.thoughtIds)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (memoryError) return c.json({ error: memoryError.message }, 500, corsHeaders);
+    rawMemories = (data || []) as AgentMemory[];
+  }
 
-  let memoryQuery = supabase
-    .from("agent_memories")
-    .select("*")
-    .eq("workspace_id", req.workspace_id)
-    .order("created_at", { ascending: false })
-    .limit(100);
-  if (thoughtIds.length > 0) memoryQuery = memoryQuery.in("thought_id", thoughtIds);
-
-  const { data: rawMemories, error: memoryError } = await memoryQuery;
-  if (memoryError) return c.json({ error: memoryError.message }, 500, corsHeaders);
-
-  const ranked = ((rawMemories || []) as AgentMemory[])
+  const ranked = rawMemories
     .filter((m) => scopeMatches(m, req))
     .map((m) => {
       const similarity = similarityByThought.get(m.thought_id || "") || 0;
@@ -422,6 +425,9 @@ app.post("/recall", async (c) => {
 });
 
 app.post("/writeback", async (c) => {
+  const blocked = readOnlyBlock(c, "POST", "/writeback");
+  if (blocked) return blocked;
+
   const parsed = writebackSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json({ error: "Invalid write-back payload", details: parsed.error.flatten() }, 400, corsHeaders);
   const req = parsed.data;
@@ -561,6 +567,9 @@ app.post("/writeback", async (c) => {
 });
 
 app.post("/recall/:request_id/usage", async (c) => {
+  const blocked = readOnlyBlock(c, "POST", "/recall/:request_id/usage");
+  if (blocked) return blocked;
+
   const request_id = c.req.param("request_id");
   const parsed = usageSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json({ error: "Invalid usage payload", details: parsed.error.flatten() }, 400, corsHeaders);
@@ -630,6 +639,9 @@ app.get("/memories/:id", async (c) => {
 });
 
 app.patch("/memories/:id/review", async (c) => {
+  const blocked = readOnlyBlock(c, "PATCH", "/memories/:id/review");
+  if (blocked) return blocked;
+
   const id = c.req.param("id");
   const parsed = reviewSchema.safeParse(await c.req.json());
   if (!parsed.success) return c.json({ error: "Invalid review payload", details: parsed.error.flatten() }, 400, corsHeaders);
@@ -638,37 +650,10 @@ app.patch("/memories/:id/review", async (c) => {
   const { data: before, error: beforeError } = await supabase.from("agent_memories").select("*").eq("id", id).single();
   if (beforeError) return c.json({ error: beforeError.message }, 404, corsHeaders);
 
-  const updates: Record<string, unknown> = {};
+  const transition = reviewTransition(req);
+  const updates = { ...transition.memoryUpdates };
   if (req.action === "confirm") {
-    updates.review_status = "confirmed";
-    updates.provenance_status = "user_confirmed";
-    updates.can_use_as_instruction = true;
-    updates.requires_user_confirmation = false;
     updates.last_confirmed_at = new Date().toISOString();
-  } else if (req.action === "evidence_only") {
-    updates.review_status = "evidence_only";
-    updates.can_use_as_instruction = false;
-    updates.can_use_as_evidence = true;
-    updates.requires_user_confirmation = false;
-  } else if (req.action === "reject") {
-    updates.review_status = "rejected";
-    updates.lifecycle_status = "rejected";
-    updates.can_use_as_instruction = false;
-    updates.can_use_as_evidence = false;
-  } else if (req.action === "mark_stale") {
-    updates.review_status = "stale";
-    updates.lifecycle_status = "stale";
-    updates.can_use_as_instruction = false;
-  } else if (req.action === "dispute") {
-    updates.lifecycle_status = "disputed";
-    updates.provenance_status = "disputed";
-    updates.can_use_as_instruction = false;
-  } else if (req.action === "restrict_scope") {
-    updates.review_status = "restricted";
-    updates.visibility = req.visibility || "personal";
-  } else if (req.action === "edit") {
-    if (req.content) updates.content = req.content;
-    if (req.summary) updates.summary = req.summary;
   }
 
   const { data: after, error: updateError } = await supabase.from("agent_memories").update(updates).eq("id", id).select("*").single();
@@ -684,18 +669,28 @@ app.patch("/memories/:id/review", async (c) => {
     after,
   });
 
-  if (req.related_memory_id && ["merge", "supersede"].includes(req.action)) {
-    await supabase.from("agent_memory_relations").insert({
+  if (req.related_memory_id && Object.keys(transition.relatedMemoryUpdates).length > 0) {
+    const { error: relatedUpdateError } = await supabase
+      .from("agent_memories")
+      .update(transition.relatedMemoryUpdates)
+      .eq("id", req.related_memory_id);
+    if (relatedUpdateError) return c.json({ error: relatedUpdateError.message }, 500, corsHeaders);
+  }
+
+  if (transition.relation) {
+    const { error: relationError } = await supabase.from("agent_memory_relations").insert({
       from_memory_id: id,
-      to_memory_id: req.related_memory_id,
-      relation: req.action === "merge" ? "merged_into" : "supersedes",
+      to_memory_id: transition.relation.to_memory_id,
+      relation: transition.relation.relation,
       confidence: 1,
     });
+    if (relationError) return c.json({ error: relationError.message }, 500, corsHeaders);
   }
 
   const eventMap: Record<string, string> = {
     confirm: "memory_confirmed",
     edit: "memory_edited",
+    merge: "memory_merged",
     reject: "memory_rejected",
     supersede: "memory_superseded",
     dispute: "memory_disputed",
