@@ -229,6 +229,16 @@ AGENT_MEMORY_API_URL=http://127.0.0.1:3022
 
 Do not enable `OB1_DEMO_AUTH_BYPASS` in shared previews or production. It exists so repeatable screenshot and video generation can run without putting real API keys in browser automation.
 
+### Agent Memory Read-Only Governance Guard
+
+Set `OB1_GOVERNANCE_READ_ONLY=true` for local governance pilots. In this mode, Agent Memory list/detail pages render read-only notices, hide review controls, and server actions return before calling `PATCH /memories/:id/review`.
+
+Verify locally:
+
+```bash
+npm run test:agent-memory
+```
+
 ## Tech Stack
 
 - **Next.js 16** (App Router)

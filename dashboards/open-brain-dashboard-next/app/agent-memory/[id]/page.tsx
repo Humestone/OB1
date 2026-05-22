@@ -14,6 +14,7 @@ import {
 } from "@/components/AgentMemoryBadges";
 import { FormattedDate } from "@/components/FormattedDate";
 import type { AgentMemoryReviewAction } from "@/lib/types";
+import { isGovernanceReadOnly } from "@/lib/governance";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function AgentMemoryDetailPage({
 }) {
   const { apiKey } = await requireSessionOrRedirect();
   const { id } = await params;
+  const governanceReadOnly = isGovernanceReadOnly();
 
   let memory;
   try {
@@ -34,6 +36,9 @@ export default async function AgentMemoryDetailPage({
 
   async function reviewAction(formData: FormData) {
     "use server";
+    if (isGovernanceReadOnly()) {
+      return;
+    }
     const { apiKey } = await requireSessionOrRedirect();
     const action = String(formData.get("action") || "") as AgentMemoryReviewAction;
     await reviewAgentMemory(apiKey, id, action, {
@@ -59,26 +64,32 @@ export default async function AgentMemoryDetailPage({
             {memory.summary}
           </h1>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <form action={reviewAction}>
-            <input type="hidden" name="action" value="evidence_only" />
-            <button className="ob1-command-button h-9 px-3 text-sm">
-              Evidence only
-            </button>
-          </form>
-          <form action={reviewAction}>
-            <input type="hidden" name="action" value="confirm" />
-            <button className="h-9 border border-success/30 px-3 text-sm text-success hover:bg-success/10">
-              Confirm
-            </button>
-          </form>
-          <form action={reviewAction}>
-            <input type="hidden" name="action" value="reject" />
-            <button className="h-9 border border-danger/30 px-3 text-sm text-danger hover:bg-danger/10">
-              Reject
-            </button>
-          </form>
-        </div>
+        {governanceReadOnly ? (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            Review actions are unavailable in the read-only governance pilot.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <form action={reviewAction}>
+              <input type="hidden" name="action" value="evidence_only" />
+              <button className="ob1-command-button h-9 px-3 text-sm">
+                Evidence only
+              </button>
+            </form>
+            <form action={reviewAction}>
+              <input type="hidden" name="action" value="confirm" />
+              <button className="h-9 border border-success/30 px-3 text-sm text-success hover:bg-success/10">
+                Confirm
+              </button>
+            </form>
+            <form action={reviewAction}>
+              <input type="hidden" name="action" value="reject" />
+              <button className="h-9 border border-danger/30 px-3 text-sm text-danger hover:bg-danger/10">
+                Reject
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_340px]">

@@ -131,6 +131,14 @@ node integrations/agent-memory-api/smoke/cleanup-test-memory.mjs
 
 The default mode is dry-run. Add `--apply` to mark matching active test memories as `rejected`. The harness refuses project IDs that do not look like smoke/test/sandbox scopes.
 
+## Local Hardening Notes
+
+- `AGENT_MEMORY_READ_ONLY=true` blocks write-capable routes before payload validation: `POST /recall`, `POST /writeback`, `POST /recall/:request_id/usage`, and `PATCH /memories/:id/review`.
+- Recall returns no memories when semantic search returns no candidate thought IDs. It does not fall back to recent workspace memories.
+- Visibility rules are explicit: personal memories require personal recall, channel memories require the matching channel, project memories respect `project_only`, workspace memories can appear in project/workspace recall, and organization memories require organization visibility.
+- `merge` marks the current memory as merged and relates it to the target with `merged_into`.
+- `supersede` treats the current memory as the replacement and marks the related older memory as superseded.
+
 ## Troubleshooting
 
 **Issue: `Invalid or missing access key`**
