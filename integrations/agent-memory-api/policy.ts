@@ -24,6 +24,54 @@ export type ScopedMemory = {
   review_status: string;
 };
 
+export type AllowedAgentMemoryScope = {
+  workspace_id?: string | null;
+  project_id?: string | null;
+};
+
+export type ScopedRecord = {
+  workspace_id?: string | null;
+  project_id?: string | null;
+};
+
+export function allowedScopeViolation(
+  record: ScopedRecord,
+  allowed: AllowedAgentMemoryScope,
+): string | null {
+  if (allowed.workspace_id && record.workspace_id !== allowed.workspace_id) {
+    return "workspace_not_allowed";
+  }
+  if (allowed.project_id && record.project_id !== allowed.project_id) {
+    return "project_not_allowed";
+  }
+  return null;
+}
+
+export function scopeGuardViolation(
+  record: ScopedRecord,
+  options: {
+    allowed?: AllowedAgentMemoryScope;
+    requested?: ScopedRecord;
+  },
+): string | null {
+  const allowedViolation = allowedScopeViolation(record, options.allowed ?? {});
+  if (allowedViolation) return allowedViolation;
+
+  if (
+    options.requested?.workspace_id &&
+    record.workspace_id !== options.requested.workspace_id
+  ) {
+    return "workspace_mismatch";
+  }
+  if (
+    options.requested?.project_id &&
+    record.project_id !== options.requested.project_id
+  ) {
+    return "project_mismatch";
+  }
+  return null;
+}
+
 export function buildMemoryThoughtFilter(thoughtIds: string[]) {
   const unique = [...new Set(thoughtIds.filter(Boolean))];
   return unique.length === 0
@@ -31,24 +79,56 @@ export function buildMemoryThoughtFilter(thoughtIds: string[]) {
     : { mode: "thought_ids" as const, thoughtIds: unique };
 }
 
-export function scopeMatches(memory: ScopedMemory, req: RecallPolicyRequest): boolean {
+export function scopeMatches(
+  memory: ScopedMemory,
+  req: RecallPolicyRequest,
+): boolean {
   if (memory.workspace_id !== req.workspace_id) return false;
-  if (req.scope.project_only && req.project_id && memory.project_id && memory.project_id !== req.project_id) return false;
-  if (!req.scope.include_stale && ["stale", "superseded", "rejected", "disputed"].includes(memory.lifecycle_status)) return false;
-  if (!req.scope.include_unconfirmed && memory.requires_user_confirmation && memory.review_status === "pending") return false;
+  if (
+    req.scope.project_only && req.project_id && memory.project_id &&
+    memory.project_id !== req.project_id
+  ) return false;
+  if (
+    !req.scope.include_stale &&
+    ["stale", "superseded", "rejected", "disputed"].includes(
+      memory.lifecycle_status,
+    )
+  ) return false;
+  if (
+    !req.scope.include_unconfirmed && memory.requires_user_confirmation &&
+    memory.review_status === "pending"
+  ) return false;
 
   const requestedVisibility = req.scope.visibility || "project";
-  if (memory.visibility === "personal") return requestedVisibility === "personal";
-  if (memory.visibility === "channel") {
-    return requestedVisibility === "channel" && Boolean(req.channel.id) && memory.channel_id === req.channel.id;
+  if (memory.visibility === "personal") {
+    return requestedVisibility === "personal";
   }
-  if (memory.visibility === "organization") return requestedVisibility === "organization";
-  if (memory.visibility === "workspace") return ["project", "workspace", "organization"].includes(requestedVisibility);
+  if (memory.visibility === "channel") {
+    return requestedVisibility === "channel" && Boolean(req.channel.id) &&
+      memory.channel_id === req.channel.id;
+  }
+  if (memory.visibility === "organization") {
+    return requestedVisibility === "organization";
+  }
+  if (memory.visibility === "workspace") {
+    return ["project", "workspace", "organization"].includes(
+      requestedVisibility,
+    );
+  }
   return true;
 }
 
 export type ReviewTransitionInput = {
-  action: "confirm" | "edit" | "evidence_only" | "restrict_scope" | "mark_stale" | "merge" | "reject" | "dispute" | "supersede";
+  action:
+    | "confirm"
+    | "edit"
+    | "evidence_only"
+    | "restrict_scope"
+    | "mark_stale"
+    | "merge"
+    | "reject"
+    | "dispute"
+    | "supersede";
   visibility?: string;
   content?: string;
   summary?: string;
@@ -108,7 +188,10 @@ export function reviewTransition(input: ReviewTransitionInput) {
       requires_user_confirmation: false,
     });
     if (input.related_memory_id) {
-      relation = { to_memory_id: input.related_memory_id, relation: "merged_into" };
+      relation = {
+        to_memory_id: input.related_memory_id,
+        relation: "merged_into",
+      };
     }
   } else if (input.action === "supersede" && input.related_memory_id) {
     Object.assign(relatedMemoryUpdates, {
@@ -116,7 +199,10 @@ export function reviewTransition(input: ReviewTransitionInput) {
       review_status: "stale",
       can_use_as_instruction: false,
     });
-    relation = { to_memory_id: input.related_memory_id, relation: "supersedes" };
+    relation = {
+      to_memory_id: input.related_memory_id,
+      relation: "supersedes",
+    };
   }
 
   return { memoryUpdates, relatedMemoryUpdates, relation };
