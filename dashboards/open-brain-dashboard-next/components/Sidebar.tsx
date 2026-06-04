@@ -1,14 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { HumeStoneMark } from "@/components/HumeStoneMark";
 import { RestrictedToggle } from "@/components/RestrictedToggle";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: DashboardIcon },
+  { href: "/workbench", label: "Workbench", icon: WorkbenchIcon },
   { href: "/thoughts", label: "Thoughts", icon: ThoughtsIcon },
   { href: "/kanban", label: "Workflow", icon: KanbanIcon },
+  { href: "/promotion-review", label: "Promotion Review", icon: PromotionReviewIcon },
   { href: "/agent-memory", label: "Agent Memory", icon: MemoryIcon },
   { href: "/search", label: "Search", icon: SearchIcon },
   { href: "/audit", label: "Audit", icon: AuditIcon },
@@ -17,11 +19,16 @@ const nav = [
 ];
 
 interface SidebarProps {
+  governanceReadOnly?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+export function Sidebar({
+  governanceReadOnly = false,
+  isOpen = false,
+  onClose,
+}: SidebarProps) {
   const pathname = usePathname();
 
   if (pathname === "/login") return null;
@@ -35,21 +42,12 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     >
       <div className="px-5 py-6 border-b border-border">
         <Link href="/" className="flex items-center gap-3" onClick={onClose}>
-          <div className="flex h-9 w-9 items-center justify-center border border-violet/35 bg-violet-surface p-1.5">
-            <Image
-              src="/brand/ob1-logo.png"
-              alt=""
-              width={28}
-              height={28}
-              unoptimized
-              className="h-full w-full object-contain opacity-95"
-            />
-          </div>
+          <HumeStoneMark className="h-9 w-9 text-xs" />
           <div className="min-w-0">
             <span className="block text-text-primary font-semibold text-lg tracking-tight">
-              Open Brain
+              Company Memory
             </span>
-            <span className="ob1-brand-kicker">Nate B. Jones</span>
+            <span className="ob1-brand-kicker">HumeStone</span>
           </div>
         </Link>
       </div>
@@ -71,16 +69,26 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             >
               <Icon active={active} />
               {label}
+              {governanceReadOnly && href === "/agent-memory" && (
+                <span className="ml-auto text-[10px] uppercase tracking-wide text-amber-200">
+                  RO
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
 
       <div className="px-3 py-3 border-t border-border space-y-2">
+        {governanceReadOnly && (
+          <div className="rounded border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+            Read-only governance pilot
+          </div>
+        )}
         <div className="px-3 pb-2">
-          <p className="ob1-brand-stamp">NBJ / OB1</p>
+          <p className="ob1-brand-stamp">HumeStone</p>
           <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-text-muted/70">
-            Personal continuity layer
+            Company memory layer
           </p>
         </div>
         <RestrictedToggle />
@@ -112,6 +120,15 @@ function ThoughtsIcon({ active }: { active: boolean }) {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
       <path d="M3 4.5h12M3 9h8M3 13.5h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function WorkbenchIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+      <rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 7h3M10 7h3M5 11h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -148,6 +165,16 @@ function KanbanIcon({ active }: { active: boolean }) {
       <rect x="1" y="2" width="4" height="14" rx="1" stroke="currentColor" strokeWidth="1.5" />
       <rect x="7" y="2" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
       <rect x="13" y="2" width="4" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function PromotionReviewIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+      <rect x="1.5" y="2" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 6h8M5 9h5M5 12h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="13.5" cy="9" r="1.2" fill="currentColor" />
     </svg>
   );
 }

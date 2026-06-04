@@ -5,6 +5,10 @@ import {
   captureThought,
 } from "@/lib/api";
 import { requireSession, AuthError } from "@/lib/auth";
+import {
+  governanceReadOnlyPayload,
+  isGovernanceReadOnly,
+} from "@/lib/governance";
 
 // ── Auto-routing heuristic ──────────────────────────────────────────────────
 
@@ -68,6 +72,12 @@ export async function GET() {
 // ── POST — unified Add to Brain ─────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  if (isGovernanceReadOnly()) {
+    return NextResponse.json(governanceReadOnlyPayload("ingest"), {
+      status: 403,
+    });
+  }
+
   let apiKey: string;
   try {
     ({ apiKey } = await requireSession());

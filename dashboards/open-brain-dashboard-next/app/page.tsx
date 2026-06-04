@@ -4,6 +4,7 @@ import { StatsWidget } from "@/components/StatsWidget";
 import { KanbanSummary } from "@/components/KanbanSummary";
 import { ThoughtCard } from "@/components/ThoughtCard";
 import { AddToBrain } from "@/components/AddToBrain";
+import { isGovernanceReadOnly } from "@/lib/governance";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export default async function DashboardPage() {
   const { apiKey } = await requireSessionOrRedirect();
   const session = await getSession();
   const excludeRestricted = !session.restrictedUnlocked;
+  const governanceReadOnly = isGovernanceReadOnly();
 
   let stats, recent;
   try {
@@ -53,7 +55,7 @@ export default async function DashboardPage() {
           Paste a thought, notes, or source text. Open Brain decides whether to
           save one thought or extract several.
         </p>
-        <AddToBrain rows={3} />
+        <AddToBrain rows={3} readOnlyMode={governanceReadOnly} />
       </div>
 
       {/* Recent activity */}

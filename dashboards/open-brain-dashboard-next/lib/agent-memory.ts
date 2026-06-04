@@ -91,11 +91,19 @@ export async function fetchReviewQueue(
 
 export async function fetchAgentMemory(
   apiKey: string,
-  memoryId: string
+  memoryId: string,
+  scope?: {
+    workspace_id?: string;
+    project_id?: string;
+  }
 ): Promise<AgentMemoryRecord> {
+  const sp = new URLSearchParams();
+  if (scope?.workspace_id) sp.set("workspace_id", scope.workspace_id);
+  if (scope?.project_id) sp.set("project_id", scope.project_id);
+  const query = sp.toString();
   const data = await agentMemoryFetch<{ memory: AgentMemoryRecord }>(
     apiKey,
-    `/memories/${memoryId}`
+    `/memories/${memoryId}${query ? `?${query}` : ""}`
   );
   return data.memory;
 }
@@ -121,10 +129,18 @@ export async function reviewAgentMemory(
 
 export async function fetchRecallTrace(
   apiKey: string,
-  requestId: string
+  requestId: string,
+  scope?: {
+    workspace_id?: string;
+    project_id?: string;
+  }
 ): Promise<AgentMemoryTraceResponse> {
+  const sp = new URLSearchParams();
+  if (scope?.workspace_id) sp.set("workspace_id", scope.workspace_id);
+  if (scope?.project_id) sp.set("project_id", scope.project_id);
+  const query = sp.toString();
   return agentMemoryFetch<AgentMemoryTraceResponse>(
     apiKey,
-    `/recall-traces/${requestId}`
+    `/recall-traces/${requestId}${query ? `?${query}` : ""}`
   );
 }

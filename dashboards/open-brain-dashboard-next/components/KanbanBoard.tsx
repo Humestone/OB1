@@ -16,6 +16,10 @@ import { KANBAN_STATUSES, KANBAN_TYPES } from "@/lib/types";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCard } from "@/components/KanbanCard";
 import { KanbanCardModal } from "@/components/KanbanCardModal";
+import {
+  GOVERNANCE_READ_ONLY_ERROR,
+  readGovernanceReadOnlyFromDom,
+} from "@/lib/governance";
 
 const AUTO_ARCHIVE_DAYS = 30;
 
@@ -35,6 +39,7 @@ async function apiUpdateKanban(
 }
 
 export function KanbanBoard() {
+  const readOnly = readGovernanceReadOnlyFromDom();
   const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +72,11 @@ export function KanbanBoard() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  function blockWrite() {
+    setError(GOVERNANCE_READ_ONLY_ERROR);
+    setTimeout(() => setError(null), 5000);
+  }
 
   // Group thoughts by status, with auto-archive for old done items
   function groupByStatus(): Record<string, Thought[]> {
@@ -103,12 +113,18 @@ export function KanbanBoard() {
   }
 
   function handleDragStart(event: DragStartEvent) {
+    if (readOnly) return;
     const thought = thoughts.find((t) => t.id === event.active.id);
     setActiveDragThought(thought ?? null);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragThought(null);
+    if (readOnly) {
+      blockWrite();
+      return;
+    }
+
     const { active, over } = event;
     if (!over) return;
 
@@ -139,6 +155,11 @@ export function KanbanBoard() {
   }
 
   async function handlePriorityChange(thoughtId: string, newImportance: number) {
+    if (readOnly) {
+      blockWrite();
+      return;
+    }
+
     previousThoughts.current = [...thoughts];
     setThoughts((prev) =>
       prev.map((t) =>
@@ -156,6 +177,11 @@ export function KanbanBoard() {
   }
 
   async function handleArchive(thoughtId: string) {
+    if (readOnly) {
+      blockWrite();
+      return;
+    }
+
     previousThoughts.current = [...thoughts];
     setThoughts((prev) =>
       prev.map((t) =>
@@ -175,6 +201,11 @@ export function KanbanBoard() {
   }
 
   async function handleDelete(thoughtId: string) {
+    if (readOnly) {
+      blockWrite();
+      return;
+    }
+
     previousThoughts.current = [...thoughts];
     setThoughts((prev) => prev.filter((t) => t.id !== thoughtId));
 
@@ -196,6 +227,11 @@ export function KanbanBoard() {
     thoughtId: string,
     updates: Record<string, unknown>
   ) {
+    if (readOnly) {
+      blockWrite();
+      return;
+    }
+
     previousThoughts.current = [...thoughts];
 
     // If type changed to non-kanban, remove from board entirely
@@ -264,6 +300,12 @@ export function KanbanBoard() {
         </div>
       )}
 
+      {readOnly && (
+        <div className="mb-4 px-4 py-2 bg-warning/10 border border-warning/20 rounded-lg text-sm text-warning">
+          Read-only governance pilot: workflow updates and deletes are unavailable.
+        </div>
+      )}
+
       {/* Controls */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -290,7 +332,7 @@ export function KanbanBoard() {
       </div>
 
       {/* Board */}
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext sensors={readOnly ? [] : sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-x-visible">
           {columns.map((status) => (
             <KanbanColumn
@@ -300,6 +342,7 @@ export function KanbanBoard() {
               onCardClick={setSelectedThought}
               onPriorityChange={handlePriorityChange}
               onArchive={handleArchive}
+              readOnlyMode={readOnly}
             />
           ))}
         </div>
@@ -310,6 +353,7 @@ export function KanbanBoard() {
                 thought={activeDragThought}
                 onCardClick={() => {}}
                 onPriorityChange={() => {}}
+                readOnlyMode={readOnly}
               />
             </div>
           )}
@@ -324,6 +368,7 @@ export function KanbanBoard() {
           onArchive={handleArchive}
           onDelete={handleDelete}
           onClose={() => setSelectedThought(null)}
+          readOnlyMode={readOnly}
         />
       )}
     </>

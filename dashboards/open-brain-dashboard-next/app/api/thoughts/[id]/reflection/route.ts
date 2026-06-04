@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession, AuthError } from "@/lib/auth";
+import {
+  governanceReadOnlyPayload,
+  isGovernanceReadOnly,
+} from "@/lib/governance";
 
 export async function POST(
   request: NextRequest,
@@ -12,6 +16,12 @@ export async function POST(
     if (err instanceof AuthError)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     throw err;
+  }
+
+  if (isGovernanceReadOnly()) {
+    return NextResponse.json(governanceReadOnlyPayload("reflection_create"), {
+      status: 403,
+    });
   }
 
   const { id } = await params;

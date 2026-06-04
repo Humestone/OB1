@@ -21,7 +21,7 @@ export function LoginForm({
           htmlFor="apiKey"
           className="block text-sm font-medium text-text-secondary mb-1.5"
         >
-          OB1 Access Key
+          HumeStone Access Key
         </label>
         <input
           id="apiKey"
@@ -29,7 +29,7 @@ export function LoginForm({
           type="password"
           required
           autoFocus
-          placeholder="your-ob1-key"
+          placeholder="your-access-key"
           className="w-full border border-border bg-bg-surface px-4 py-2.5 text-text-primary placeholder-text-muted transition focus:border-violet focus:outline-none focus:ring-1 focus:ring-violet/30"
         />
       </div>

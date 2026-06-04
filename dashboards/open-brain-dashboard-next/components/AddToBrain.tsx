@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {
   AddToBrainMode,
   AddToBrainResult,
   IngestionItem,
   IngestionJobDetail,
 } from "@/lib/types";
+import {
+  GOVERNANCE_READ_ONLY_ERROR,
+  readGovernanceReadOnlyFromDom,
+} from "@/lib/governance";
 
 interface AddToBrainProps {
   /** Textarea row count (default 4) */
@@ -17,6 +21,8 @@ interface AddToBrainProps {
   showJobDetail?: boolean;
   /** Callback after successful add */
   onSuccess?: (result: AddToBrainResult) => void;
+  /** Read-only governance mode */
+  readOnlyMode?: boolean;
 }
 
 const MODES: { value: AddToBrainMode; label: string; description: string }[] = [
@@ -56,6 +62,7 @@ export function AddToBrain({
   showModeControl = false,
   showJobDetail = false,
   onSuccess,
+  readOnlyMode = false,
 }: AddToBrainProps) {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<AddToBrainMode>("auto");
@@ -64,12 +71,18 @@ export function AddToBrain({
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dryRun, setDryRun] = useState(false);
+  const [domGovernanceReadOnly, setDomGovernanceReadOnly] = useState(false);
 
   // Job detail state (only used when showJobDetail is true)
   const [jobDetail, setJobDetail] = useState<IngestionJobDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [executing, setExecuting] = useState(false);
   const [executeError, setExecuteError] = useState<string | null>(null);
+  useEffect(() => {
+    setDomGovernanceReadOnly(readGovernanceReadOnlyFromDom());
+  }, []);
+
+  const readOnly = readOnlyMode || domGovernanceReadOnly;
 
   const fetchJobDetail = useCallback(async (jobId: number) => {
     setLoadingDetail(true);
@@ -87,6 +100,10 @@ export function AddToBrain({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      setError(GOVERNANCE_READ_ONLY_ERROR);
+      return;
+    }
     if (!text.trim() || submitting) return;
 
     setSubmitting(true);
@@ -130,6 +147,10 @@ export function AddToBrain({
   };
 
   const handleExecute = async () => {
+    if (readOnly) {
+      setExecuteError(GOVERNANCE_READ_ONLY_ERROR);
+      return;
+    }
     if (!jobDetail || executing) return;
     setExecuting(true);
     setExecuteError(null);
@@ -164,9 +185,15 @@ export function AddToBrain({
   return (
     <div className="space-y-3">
       <form onSubmit={handleSubmit} className="space-y-3">
+        {readOnly && (
+          <p className="text-xs text-amber-200">
+            Read-only governance pilot: Add to Brain is disabled.
+          </p>
+        )}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
+          disabled={readOnly}
           rows={rows}
           placeholder="Paste a thought, notes, or source text..."
           className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-3 text-text-primary placeholder-text-muted focus:outline-none focus:border-violet focus:ring-1 focus:ring-violet/30 transition resize-y"
@@ -177,8 +204,14 @@ export function AddToBrain({
           <div>
             <button
               type="button"
+              disabled={readOnly}
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="text-xs text-text-muted hover:text-text-secondary transition-colors flex items-center gap-1"
+              title={
+                readOnly
+                  ? "Blocked by read-only governance pilot"
+                  : "Show advanced controls"
+              }
             >
               <svg
                 width="12"
@@ -205,13 +238,18 @@ export function AddToBrain({
                     <button
                       key={m.value}
                       type="button"
+                      disabled={readOnly}
                       onClick={() => setMode(m.value)}
                       className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                         mode === m.value
                           ? "bg-violet-surface text-violet border-violet/30"
                           : "bg-bg-surface text-text-secondary border-border hover:border-text-muted"
                       }`}
-                      title={m.description}
+                      title={
+                        readOnly
+                          ? "Blocked by read-only governance pilot"
+                          : m.description
+                      }
                     >
                       {m.label}
                       {m.value === "auto" && " (recommended)"}
@@ -225,6 +263,7 @@ export function AddToBrain({
                     <input
                       type="checkbox"
                       checked={dryRun}
+                      disabled={readOnly}
                       onChange={(e) => setDryRun(e.target.checked)}
                       className="rounded border-border text-violet focus:ring-violet/30"
                     />
@@ -245,10 +284,15 @@ export function AddToBrain({
           <div className="ml-auto">
             <button
               type="submit"
-              disabled={submitting || !text.trim()}
+              disabled={readOnly || submitting || !text.trim()}
+              title={
+                readOnly
+                  ? "Blocked by read-only governance pilot"
+                  : "Add this content to Open Brain"
+              }
               className="px-5 py-2.5 bg-violet hover:bg-violet-dim text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? "Adding..." : "Add to Brain"}
+              {readOnly ? "Add Blocked" : submitting ? "Adding..." : "Add to Brain"}
             </button>
           </div>
         </div>
@@ -361,10 +405,19 @@ export function AddToBrain({
               <button
                 type="button"
                 onClick={handleExecute}
-                disabled={executing}
+                disabled={readOnly || executing}
+                title={
+                  readOnly
+                    ? "Blocked by read-only governance pilot"
+                    : "Commit extracted thoughts"
+                }
                 className="px-4 py-2 bg-violet hover:bg-violet-dim text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {executing ? "Executing..." : "Review & Execute"}
+                {readOnly
+                  ? "Review & Execute (Blocked)"
+                  : executing
+                    ? "Executing..."
+                    : "Review & Execute"}
               </button>
               {executeError && (
                 <p className="text-danger text-xs mt-1">{executeError}</p>

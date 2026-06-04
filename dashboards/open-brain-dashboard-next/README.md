@@ -27,6 +27,7 @@ Provides 9 pages for managing your thoughts:
 | **Audit** | Quality review for low-score thoughts with bulk delete |
 | **Duplicates** | Semantic similarity detection with keep/delete/keep-both resolution |
 | **Agent Memory** | Review queue, memory inspector, and recall trace debugging for OB1 Agent Memory |
+| **Promotion Review** | Read-only queue view over the local Phase 3 promotion review manifest contract |
 | **Login** | API key authentication via encrypted session cookie |
 
 ## Prerequisites

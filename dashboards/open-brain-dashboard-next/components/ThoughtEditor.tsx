@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Thought } from "@/lib/types";
+import { readGovernanceReadOnlyFromDom } from "@/lib/governance";
 
 const TYPES = [
   "idea",
@@ -20,12 +21,15 @@ const IMPORTANCE_OPTIONS = [1, 2, 3, 4, 5];
 export function ThoughtEditor({
   thought,
   editAction,
+  readOnlyMode = false,
 }: {
   thought: Thought;
   editAction: (formData: FormData) => Promise<void>;
+  readOnlyMode?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const router = useRouter();
+  const readOnly = readOnlyMode || readGovernanceReadOnlyFromDom();
 
   if (!editing) {
     return (
@@ -36,11 +40,22 @@ export function ThoughtEditor({
           </h2>
           <button
             onClick={() => setEditing(true)}
-            className="text-xs text-violet hover:text-violet-dim transition-colors"
+            disabled={readOnly}
+            title={
+              readOnly
+                ? "Blocked by read-only governance pilot"
+                : "Edit this thought"
+            }
+            className="text-xs text-violet hover:text-violet-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Edit
+            {readOnly ? "Edit Blocked" : "Edit"}
           </button>
         </div>
+        {readOnly && (
+          <p className="mb-3 text-xs text-amber-200">
+            Editing is unavailable during the read-only governance pilot.
+          </p>
+        )}
         <p className="text-text-primary whitespace-pre-wrap leading-relaxed">
           {thought.content}
         </p>
@@ -51,6 +66,7 @@ export function ThoughtEditor({
   return (
     <form
       action={async (formData) => {
+        if (readOnly) return;
         await editAction(formData);
         setEditing(false);
         router.refresh();
@@ -60,6 +76,7 @@ export function ThoughtEditor({
       <textarea
         name="content"
         defaultValue={thought.content}
+        disabled={readOnly}
         rows={8}
         className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-violet focus:ring-1 focus:ring-violet/30 transition resize-y"
       />
@@ -69,6 +86,7 @@ export function ThoughtEditor({
           <select
             name="type"
             defaultValue={thought.type}
+            disabled={readOnly}
             className="bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-violet"
           >
             {TYPES.map((t) => (
@@ -87,6 +105,7 @@ export function ThoughtEditor({
             defaultValue={String(
               Math.min(Math.max(thought.importance || 3, 1), 5)
             )}
+            disabled={readOnly}
             className="bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text-primary w-20 focus:outline-none focus:border-violet"
           >
             {IMPORTANCE_OPTIONS.map((level) => (
@@ -100,9 +119,15 @@ export function ThoughtEditor({
       <div className="flex gap-2">
         <button
           type="submit"
+          disabled={readOnly}
+          title={
+            readOnly
+              ? "Blocked by read-only governance pilot"
+              : "Save thought changes"
+          }
           className="px-4 py-2 text-sm font-medium bg-violet hover:bg-violet-dim text-white rounded-lg transition-colors"
         >
-          Save
+          {readOnly ? "Save Blocked" : "Save"}
         </button>
         <button
           type="button"

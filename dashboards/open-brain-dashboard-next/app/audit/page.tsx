@@ -4,9 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { TypeBadge } from "@/components/ThoughtCard";
 import { DeleteModal } from "@/components/DeleteModal";
+import {
+  GOVERNANCE_READ_ONLY_ERROR,
+  readGovernanceReadOnlyFromDom,
+} from "@/lib/governance";
 import type { Thought, BrowseResponse } from "@/lib/types";
 
 export default function AuditPage() {
+  const governanceReadOnly = readGovernanceReadOnlyFromDom();
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
@@ -52,6 +57,11 @@ export default function AuditPage() {
   };
 
   const handleBulkDelete = async () => {
+    if (governanceReadOnly) {
+      setError(GOVERNANCE_READ_ONLY_ERROR);
+      return;
+    }
+
     try {
       const res = await fetch("/api/audit/delete", {
         method: "POST",
@@ -95,12 +105,28 @@ export default function AuditPage() {
         {selected.size > 0 && (
           <button
             onClick={() => setShowDelete(true)}
-            className="px-4 py-2 text-sm font-medium text-danger border border-danger/30 rounded-lg hover:bg-danger/10 transition-colors"
+            disabled={governanceReadOnly}
+            title={
+              governanceReadOnly
+                ? "Blocked by read-only governance pilot"
+                : "Delete selected thoughts"
+            }
+            className="px-4 py-2 text-sm font-medium text-danger border border-danger/30 rounded-lg hover:bg-danger/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Delete {selected.size} selected
+            {governanceReadOnly ? (
+              <>Delete {selected.size} selected (Blocked)</>
+            ) : (
+              <>Delete {selected.size} selected</>
+            )}
           </button>
         )}
       </div>
+
+      {governanceReadOnly && (
+        <p className="text-warning text-sm">
+          Read-only governance pilot: audit delete actions are unavailable.
+        </p>
+      )}
 
       {error && <p className="text-danger text-sm">{error}</p>}
 

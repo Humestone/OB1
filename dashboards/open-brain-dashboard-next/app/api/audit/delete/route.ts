@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteThought } from "@/lib/api";
 import { requireSession, AuthError } from "@/lib/auth";
+import {
+  governanceReadOnlyPayload,
+  isGovernanceReadOnly,
+} from "@/lib/governance";
 
 export async function POST(request: NextRequest) {
   // Auth BEFORE body parse — unauthed requests get 401, not 400
@@ -11,6 +15,12 @@ export async function POST(request: NextRequest) {
     if (err instanceof AuthError)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     throw err;
+  }
+
+  if (isGovernanceReadOnly()) {
+    return NextResponse.json(governanceReadOnlyPayload("audit_delete"), {
+      status: 403,
+    });
   }
 
   try {

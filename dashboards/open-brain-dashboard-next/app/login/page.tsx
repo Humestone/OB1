@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
+import { HumeStoneMark } from "@/components/HumeStoneMark";
 import { getSession } from "@/lib/auth";
 import { LoginForm } from "./LoginForm";
 
@@ -42,22 +42,13 @@ export default async function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-transparent ml-0 px-4">
       <div className="ob1-login-panel w-full max-w-sm p-6">
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-violet/35 bg-violet-surface p-3">
-            <Image
-              src="/brand/ob1-logo.png"
-              alt=""
-              width={40}
-              height={40}
-              unoptimized
-              className="h-full w-full object-contain"
-            />
-          </div>
-          <p className="ob1-brand-kicker mb-2">Nate B. Jones / OB1</p>
+          <HumeStoneMark className="mx-auto mb-4 h-16 w-16 text-lg" />
+          <p className="ob1-brand-kicker mb-2">HumeStone</p>
           <h1 className="text-2xl font-semibold text-text-primary">
-            Open Brain
+            Company Memory
           </h1>
           <p className="text-text-secondary text-sm mt-1">
-            Enter your API key to continue
+            Enter your access key to continue
           </p>
         </div>
 

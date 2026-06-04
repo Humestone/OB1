@@ -1,10 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
+import { HumeStoneMark } from "@/components/HumeStoneMark";
 import { Sidebar } from "@/components/Sidebar";
 
-export function SidebarShell() {
+export function SidebarShell({
+  governanceReadOnly = false,
+}: {
+  governanceReadOnly?: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -21,19 +25,12 @@ export function SidebarShell() {
             <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
-        <Image
-          src="/brand/ob1-logo.png"
-          alt=""
-          width={24}
-          height={24}
-          unoptimized
-          className="h-6 w-6 object-contain"
-        />
+        <HumeStoneMark className="h-6 w-6 text-[9px]" />
         <div className="min-w-0">
           <span className="block text-text-primary font-semibold text-base leading-tight tracking-tight">
-            Open Brain
+            Company Memory
           </span>
-          <span className="ob1-brand-kicker">Nate B. Jones</span>
+          <span className="ob1-brand-kicker">HumeStone</span>
         </div>
       </div>
 
@@ -46,7 +43,11 @@ export function SidebarShell() {
       )}
 
       {/* Sidebar */}
-      <Sidebar isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <Sidebar
+        governanceReadOnly={governanceReadOnly}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      />
     </>
   );
 }

@@ -3,8 +3,8 @@
 import { formatDate } from "@/lib/format";
 
 /**
- * Renders a date string formatted as MM/DD/YYYY HH:MM in the user's local timezone.
- * Use this in server components to ensure consistent client-side timezone rendering.
+ * Renders a date string formatted as MM/DD/YYYY HH:MM in UTC.
+ * Use this in server components to keep hydration stable across timezones.
  */
 export function FormattedDate({
   date,
