@@ -1,31 +1,37 @@
-import Image from "next/image";
+import { createHash, timingSafeEqual } from "crypto";
 import { redirect } from "next/navigation";
+import { HumeStoneMark } from "@/components/HumeStoneMark";
 import { getSession } from "@/lib/auth";
 import { LoginForm } from "./LoginForm";
+
+// Constant-time equality: hash both sides to fixed-length digests so neither
+// the comparison nor the length leaks timing information about the password.
+function safeEqual(a: string, b: string): boolean {
+  const ah = createHash("sha256").update(a).digest();
+  const bh = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ah, bh);
+}
 
 async function loginAction(formData: FormData) {
   "use server";
 
-  const apiKey = formData.get("apiKey") as string;
-  if (!apiKey?.trim()) {
-    return { error: "API key is required" };
+  const password = formData.get("password") as string;
+  if (!password?.trim()) {
+    return { error: "Password is required" };
   }
 
-  // Validate key against health endpoint
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  try {
-    const res = await fetch(`${apiUrl}/health`, {
-      headers: { "x-brain-key": apiKey },
-    });
-    if (!res.ok) {
-      return { error: "Invalid API key or service unavailable" };
-    }
-  } catch {
-    return { error: "Could not reach API. Check your connection." };
+  const expected = process.env.DASHBOARD_PASSWORD;
+  if (!expected) {
+    return { error: "Login is not configured. Contact the administrator." };
   }
 
+  if (!safeEqual(password, expected)) {
+    return { error: "Incorrect password" };
+  }
+
+  // Password is the only credential the user supplies. The brain key is held
+  // server-side and never stored in the session.
   const session = await getSession();
-  session.apiKey = apiKey;
   session.loggedIn = true;
   await session.save();
 
@@ -34,7 +40,7 @@ async function loginAction(formData: FormData) {
 
 export default async function LoginPage() {
   const session = await getSession();
-  if (session.loggedIn && session.apiKey) {
+  if (session.loggedIn) {
     redirect("/");
   }
 
@@ -42,22 +48,13 @@ export default async function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-transparent ml-0 px-4">
       <div className="ob1-login-panel w-full max-w-sm p-6">
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-violet/35 bg-violet-surface p-3">
-            <Image
-              src="/brand/ob1-logo.png"
-              alt=""
-              width={40}
-              height={40}
-              unoptimized
-              className="h-full w-full object-contain"
-            />
-          </div>
-          <p className="ob1-brand-kicker mb-2">Nate B. Jones / OB1</p>
+          <HumeStoneMark className="mx-auto mb-4 h-16 w-16 text-lg" />
+          <p className="ob1-brand-kicker mb-2">HumeStone</p>
           <h1 className="text-2xl font-semibold text-text-primary">
-            Open Brain
+            Company Memory
           </h1>
           <p className="text-text-secondary text-sm mt-1">
-            Enter your API key to continue
+            Enter your password to continue
           </p>
         </div>
 

@@ -14,6 +14,7 @@ interface KanbanCardModalProps {
   onArchive: (thoughtId: string) => void;
   onDelete: (thoughtId: string) => void;
   onClose: () => void;
+  readOnlyMode?: boolean;
 }
 
 export function KanbanCardModal({
@@ -22,6 +23,7 @@ export function KanbanCardModal({
   onArchive,
   onDelete,
   onClose,
+  readOnlyMode = false,
 }: KanbanCardModalProps) {
   const [content, setContent] = useState(thought.content);
   const [status, setStatus] = useState(thought.status ?? "new");
@@ -80,6 +82,8 @@ export function KanbanCardModal({
   }
 
   function handleSave() {
+    if (readOnlyMode) return;
+
     const updates: Record<string, unknown> = {};
     if (content !== thought.content) updates.content = content;
     if (status !== (thought.status ?? "new")) updates.status = status;
@@ -160,14 +164,21 @@ export function KanbanCardModal({
 
         {/* Fields — scrollable */}
         <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
+          {readOnlyMode && (
+            <p className="text-sm text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
+              Read-only governance pilot: workflow edits and deletes are unavailable.
+            </p>
+          )}
+
           {/* Status + Priority + Type row */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-text-muted mb-1">Status</label>
               <select
                 value={status}
+                disabled={readOnlyMode}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40"
+                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {KANBAN_STATUSES.map((s) => (
                   <option key={s} value={s}>
@@ -182,11 +193,12 @@ export function KanbanCardModal({
               <label className="block text-xs text-text-muted mb-1">Priority</label>
               <select
                 value={currentPriority.label}
+                disabled={readOnlyMode}
                 onChange={(e) => {
                   const level = PRIORITY_LEVELS.find((p) => p.label === e.target.value);
                   if (level) setImportance(level.value);
                 }}
-                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40"
+                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {PRIORITY_LEVELS.map((p) => (
                   <option key={p.label} value={p.label}>
@@ -200,8 +212,9 @@ export function KanbanCardModal({
               <label className="block text-xs text-text-muted mb-1">Type</label>
               <select
                 value={type}
+                disabled={readOnlyMode}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40"
+                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {THOUGHT_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -221,8 +234,9 @@ export function KanbanCardModal({
             <textarea
               ref={textareaRef}
               value={content}
+              disabled={readOnlyMode}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-bg-hover border border-border rounded-lg px-3 py-2 text-sm text-text-primary leading-relaxed resize-none focus:outline-none focus:border-violet/40 min-h-[100px] max-h-[40vh]"
+              className="w-full bg-bg-hover border border-border rounded-lg px-3 py-2 text-sm text-text-primary leading-relaxed resize-none focus:outline-none focus:border-violet/40 min-h-[100px] max-h-[40vh] disabled:opacity-50 disabled:cursor-not-allowed"
               rows={4}
             />
           </div>
@@ -243,24 +257,28 @@ export function KanbanCardModal({
             {thought.status === "done" && (
               <button
                 type="button"
+                disabled={readOnlyMode}
                 onClick={() => {
+                  if (readOnlyMode) return;
                   onArchive(thought.id);
                   onClose();
                 }}
-                className="text-sm text-text-muted hover:text-amber-400 transition-colors"
+                className="text-sm text-text-muted hover:text-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Archive
+                {readOnlyMode ? "Archive Blocked" : "Archive"}
               </button>
             )}
             <button
               type="button"
+              disabled={readOnlyMode}
               onClick={() => {
+                if (readOnlyMode) return;
                 setShowDiscardConfirm(false);
                 setShowDeleteConfirm(true);
               }}
-              className="text-sm text-text-muted hover:text-danger transition-colors"
+              className="text-sm text-text-muted hover:text-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete
+              {readOnlyMode ? "Delete Blocked" : "Delete"}
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -274,14 +292,14 @@ export function KanbanCardModal({
             <button
               type="button"
               onClick={handleSave}
-              disabled={!hasChanges}
+              disabled={readOnlyMode || !hasChanges}
               className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
-                hasChanges
+                hasChanges && !readOnlyMode
                   ? "bg-violet text-white hover:bg-violet/80"
                   : "bg-bg-hover text-text-muted cursor-not-allowed"
               }`}
             >
-              Save
+              {readOnlyMode ? "Save Blocked" : "Save"}
             </button>
           </div>
         </div>
@@ -313,13 +331,15 @@ export function KanbanCardModal({
           </button>
           <button
             type="button"
+            disabled={readOnlyMode}
             onClick={() => {
+              if (readOnlyMode) return;
               onDelete(thought.id);
               onClose();
             }}
-            className="px-4 py-1.5 text-sm rounded-lg bg-danger text-white hover:bg-danger/80 transition-colors"
+            className="px-4 py-1.5 text-sm rounded-lg bg-danger text-white hover:bg-danger/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Delete
+            {readOnlyMode ? "Delete Blocked" : "Delete"}
           </button>
         </div>
       </div>

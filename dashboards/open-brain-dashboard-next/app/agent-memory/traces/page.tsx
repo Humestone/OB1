@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchRecallTrace } from "@/lib/agent-memory";
+import { agentMemoryDefaults, fetchRecallTrace } from "@/lib/agent-memory";
 import { requireSessionOrRedirect } from "@/lib/auth";
 import { PolicyBadges } from "@/components/AgentMemoryBadges";
 import { FormattedDate } from "@/components/FormattedDate";
@@ -14,12 +14,18 @@ export default async function RecallTracePage({
   const { apiKey } = await requireSessionOrRedirect();
   const params = await searchParams;
   const requestId = params.request_id || "";
+  const defaults = agentMemoryDefaults();
+  const workspaceId = params.workspace_id || defaults.workspaceId;
+  const projectId = params.project_id ?? defaults.projectId;
 
   let data = null;
   let error: string | null = null;
   if (requestId) {
     try {
-      data = await fetchRecallTrace(apiKey, requestId);
+      data = await fetchRecallTrace(apiKey, requestId, {
+        workspace_id: workspaceId,
+        project_id: projectId,
+      });
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to load recall trace";
     }
@@ -44,6 +50,8 @@ export default async function RecallTracePage({
       </div>
 
       <form className="flex flex-col gap-2 md:flex-row" action="/agent-memory/traces">
+        <input type="hidden" name="workspace_id" value={workspaceId} />
+        {projectId && <input type="hidden" name="project_id" value={projectId} />}
         <input
           name="request_id"
           defaultValue={requestId}
@@ -97,7 +105,7 @@ export default async function RecallTracePage({
                     <td className="px-4 py-3">
                       {item.agent_memories ? (
                         <Link
-                          href={`/agent-memory/${item.memory_id}`}
+                          href={`/agent-memory/${item.memory_id}?${scopedParams(workspaceId, projectId)}`}
                           className="font-medium text-text-primary hover:text-violet"
                         >
                           {item.agent_memories.summary}
@@ -161,4 +169,11 @@ export default async function RecallTracePage({
 
 function formatScore(value: number | null) {
   return value === null || value === undefined ? "n/a" : Number(value).toFixed(3);
+}
+
+function scopedParams(workspaceId: string, projectId: string) {
+  const sp = new URLSearchParams();
+  sp.set("workspace_id", workspaceId);
+  if (projectId) sp.set("project_id", projectId);
+  return sp.toString();
 }

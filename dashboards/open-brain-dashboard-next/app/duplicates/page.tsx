@@ -5,6 +5,10 @@ import Link from "next/link";
 import { TypeBadge } from "@/components/ThoughtCard";
 import { DeleteModal } from "@/components/DeleteModal";
 import type { DuplicatePair } from "@/lib/types";
+import {
+  GOVERNANCE_READ_ONLY_ERROR,
+  readGovernanceReadOnlyFromDom,
+} from "@/lib/governance";
 
 const PER_PAGE = 30;
 
@@ -22,6 +26,7 @@ export default function DuplicatesPage() {
     action: "keep_a" | "keep_b";
     pair: DuplicatePair;
   } | null>(null);
+  const governanceReadOnly = readGovernanceReadOnlyFromDom();
 
   // Batch selection state: pairKey -> which side to keep
   const [selections, setSelections] = useState<Record<string, Selection>>({});
@@ -29,6 +34,7 @@ export default function DuplicatesPage() {
   const [confirmBatch, setConfirmBatch] = useState(false);
 
   const toggleSelection = (key: string, action: Selection) => {
+    if (governanceReadOnly) return;
     setSelections((prev) => {
       if (prev[key] === action) {
         // Deselect if clicking the same side
@@ -45,6 +51,11 @@ export default function DuplicatesPage() {
   const selectedCount = Object.keys(selections).length;
 
   const processBatch = async () => {
+    if (governanceReadOnly) {
+      setError(GOVERNANCE_READ_ONLY_ERROR);
+      setConfirmBatch(false);
+      return;
+    }
     setBatchProcessing(true);
     setError(null);
     const entries = Object.entries(selections);
@@ -106,6 +117,11 @@ export default function DuplicatesPage() {
     action: "keep_a" | "keep_b" | "keep_both",
     pair: DuplicatePair
   ) => {
+    if (governanceReadOnly) {
+      setError(GOVERNANCE_READ_ONLY_ERROR);
+      setConfirmDelete(null);
+      return;
+    }
     const key = `${pair.thought_id_a}-${pair.thought_id_b}`;
     setResolving(key);
     try {
@@ -213,6 +229,11 @@ export default function DuplicatesPage() {
       })()}
 
       {error && <p className="text-danger text-sm">{error}</p>}
+      {governanceReadOnly && (
+        <p className="text-amber-200 text-sm">
+          Read-only governance pilot: duplicate resolve actions are unavailable.
+        </p>
+      )}
 
       {pairs.length === 0 && !loading && (
         <div className="text-text-muted text-sm py-12 text-center">
@@ -247,6 +268,7 @@ export default function DuplicatesPage() {
                     <input
                       type="radio"
                       name={`pair-${key}`}
+                      disabled={governanceReadOnly}
                       checked={selections[key] === "keep_both"}
                       onChange={() => toggleSelection(key, "keep_both")}
                       className="accent-violet"
@@ -274,6 +296,7 @@ export default function DuplicatesPage() {
                       <input
                         type="radio"
                         name={`pair-${key}`}
+                        disabled={governanceReadOnly}
                         checked={selections[key] === "keep_a"}
                         onChange={() => toggleSelection(key, "keep_a")}
                         onClick={(e) => e.stopPropagation()}
@@ -310,14 +333,20 @@ export default function DuplicatesPage() {
                         <span className="text-xs text-red-400 font-medium">Delete</span>
                       )}
                       <button
-                        disabled={isResolving}
+                        disabled={governanceReadOnly || isResolving}
+                        title={
+                          governanceReadOnly
+                            ? "Blocked by read-only governance pilot"
+                            : "Keep this thought and delete the duplicate"
+                        }
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (governanceReadOnly) return;
                           setConfirmDelete({ action: "keep_a", pair });
                         }}
                         className="px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-colors disabled:opacity-30"
                       >
-                        Keep This
+                        {governanceReadOnly ? "Keep This (Blocked)" : "Keep This"}
                       </button>
                     </div>
                   </div>
@@ -339,6 +368,7 @@ export default function DuplicatesPage() {
                       <input
                         type="radio"
                         name={`pair-${key}`}
+                        disabled={governanceReadOnly}
                         checked={selections[key] === "keep_b"}
                         onChange={() => toggleSelection(key, "keep_b")}
                         onClick={(e) => e.stopPropagation()}
@@ -375,14 +405,20 @@ export default function DuplicatesPage() {
                         <span className="text-xs text-red-400 font-medium">Delete</span>
                       )}
                       <button
-                        disabled={isResolving}
+                        disabled={governanceReadOnly || isResolving}
+                        title={
+                          governanceReadOnly
+                            ? "Blocked by read-only governance pilot"
+                            : "Keep this thought and delete the duplicate"
+                        }
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (governanceReadOnly) return;
                           setConfirmDelete({ action: "keep_b", pair });
                         }}
                         className="px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-colors disabled:opacity-30"
                       >
-                        Keep This
+                        {governanceReadOnly ? "Keep This (Blocked)" : "Keep This"}
                       </button>
                     </div>
                   </div>

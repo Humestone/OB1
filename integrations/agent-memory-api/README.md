@@ -77,6 +77,16 @@ materialized `supabase/functions/agent-memory-api` copy unless it has been
 resynchronized with `index.ts`, `auth.ts`, `policy.ts`, `read-only.ts`, and
 `deno.json`.
 
+Before deploying from a materialized package, run the package sync check:
+
+```bash
+node integrations/agent-memory-api/check-supabase-package-sync.mjs
+```
+
+The check intentionally compares only runtime files. Tests, docs, smoke
+harnesses, metadata, and `deno.lock` stay in this integration folder unless a
+separate deployment-snapshot policy says otherwise.
+
 **Done when:** `supabase functions list` shows `agent-memory-api` as active.
 
 ![Step 3](https://img.shields.io/badge/Step_3-Test_Health-1E88E5?style=for-the-badge)

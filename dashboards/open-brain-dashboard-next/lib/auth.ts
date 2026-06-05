@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export interface SessionData {
-  apiKey?: string;
   loggedIn?: boolean;
   restrictedUnlocked?: boolean;
 }
@@ -13,6 +12,23 @@ export class AuthError extends Error {
     super(message);
     this.name = "AuthError";
   }
+}
+
+/**
+ * The brain (Company Memory) access key lives server-side only — it is never
+ * typed at login or stored in the session. All dashboard reads use this.
+ * Prefers OPEN_BRAIN_KEY (clearer name); falls back to the legacy MCP_ACCESS_KEY.
+ * Throws (not AuthError) when unconfigured so it surfaces as a server
+ * misconfiguration (500), not an auth failure (401).
+ */
+export function getBrainKey(): string {
+  const key = process.env.OPEN_BRAIN_KEY || process.env.MCP_ACCESS_KEY;
+  if (!key) {
+    throw new Error(
+      "Server brain key is not configured (set OPEN_BRAIN_KEY or MCP_ACCESS_KEY)"
+    );
+  }
+  return key;
 }
 
 function shouldUseSecureCookie() {
@@ -64,10 +80,10 @@ export async function requireSession(): Promise<{ apiKey: string }> {
   if (demoSession) return demoSession;
 
   const session = await getSession();
-  if (!session.loggedIn || !session.apiKey) {
+  if (!session.loggedIn) {
     throw new AuthError();
   }
-  return { apiKey: session.apiKey };
+  return { apiKey: getBrainKey() };
 }
 
 /**
@@ -80,8 +96,8 @@ export async function requireSessionOrRedirect(): Promise<{
   if (demoSession) return demoSession;
 
   const session = await getSession();
-  if (!session.loggedIn || !session.apiKey) {
+  if (!session.loggedIn) {
     redirect("/login");
   }
-  return { apiKey: session.apiKey };
+  return { apiKey: getBrainKey() };
 }

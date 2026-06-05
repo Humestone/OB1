@@ -53,7 +53,6 @@ body {
   pointer-events: none;
   z-index: -2;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='20' viewBox='0 0 120 20'%3E%3Ctext x='0' y='8' fill='%23ece5d1' fill-opacity='.092' font-family='monospace' font-size='5' letter-spacing='1.55'%3ENBJ OB1%3C/text%3E%3Ctext x='60' y='18' fill='%23ece5d1' fill-opacity='.064' font-family='monospace' font-size='5' letter-spacing='1.55'%3ENBJ OB1%3C/text%3E%3C/svg%3E"),
     repeating-linear-gradient(
       2deg,
       rgb(255 255 255 / var(--ob1-fiber-light-opacity)) 0,
@@ -71,7 +70,6 @@ body {
     radial-gradient(circle at 16% 14%, rgb(255 255 255 / 0.055), transparent 32%),
     linear-gradient(180deg, transparent 42%, rgba(0, 0, 0, 0.24));
   background-size:
-    120px 20px,
     160px 160px,
     220px 220px,
     100% 100%,

@@ -26,6 +26,7 @@ interface KanbanColumnProps {
   onCardClick: (thought: Thought) => void;
   onPriorityChange: (thoughtId: string, importance: number) => void;
   onArchive: (thoughtId: string) => void;
+  readOnlyMode?: boolean;
 }
 
 export function KanbanColumn({
@@ -34,6 +35,7 @@ export function KanbanColumn({
   onCardClick,
   onPriorityChange,
   onArchive,
+  readOnlyMode = false,
 }: KanbanColumnProps) {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -46,7 +48,7 @@ export function KanbanColumn({
     localStorage.setItem(collapseKey(status), String(nextState));
   }
 
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+  const { setNodeRef, isOver } = useDroppable({ id: status, disabled: readOnlyMode });
   const accentClass = COLUMN_ACCENT[status] || COLUMN_ACCENT.new;
   const label = KANBAN_LABELS[status as KanbanStatus] ?? status;
 
@@ -121,8 +123,9 @@ export function KanbanColumn({
                 thought={thought}
                 onCardClick={onCardClick}
                 onPriorityChange={onPriorityChange}
-                showArchiveButton={status === "done"}
+                showArchiveButton={status === "done" && !readOnlyMode}
                 onArchive={onArchive}
+                readOnlyMode={readOnlyMode}
               />
             ))
           )}

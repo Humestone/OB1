@@ -14,6 +14,10 @@ import { ReflectionComposer } from "@/components/ReflectionComposer";
 import { ConnectionsPanel } from "@/components/ConnectionsPanel";
 import { FormattedDate } from "@/components/FormattedDate";
 import Link from "next/link";
+import {
+  GOVERNANCE_READ_ONLY_ERROR,
+  isGovernanceReadOnly,
+} from "@/lib/governance";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +29,7 @@ export default async function ThoughtDetailPage({
   const { apiKey } = await requireSessionOrRedirect();
   const session = await getSession();
   const excludeRestricted = !session.restrictedUnlocked;
+  const governanceReadOnly = isGovernanceReadOnly();
   const { id } = await params;
   const thoughtId = id.trim();
   if (!thoughtId) notFound();
@@ -66,6 +71,9 @@ export default async function ThoughtDetailPage({
 
   async function editAction(formData: FormData) {
     "use server";
+    if (isGovernanceReadOnly()) {
+      throw new Error(GOVERNANCE_READ_ONLY_ERROR);
+    }
     const { apiKey } = await requireSessionOrRedirect();
     const content = formData.get("content") as string;
     const type = formData.get("type") as string;
@@ -75,6 +83,9 @@ export default async function ThoughtDetailPage({
 
   async function deleteAction() {
     "use server";
+    if (isGovernanceReadOnly()) {
+      throw new Error(GOVERNANCE_READ_ONLY_ERROR);
+    }
     const { apiKey } = await requireSessionOrRedirect();
     await deleteThought(apiKey, thoughtId);
     redirect("/thoughts");
@@ -117,11 +128,18 @@ export default async function ThoughtDetailPage({
               ` | Sensitivity: ${thought.sensitivity_tier}`}
           </p>
         </div>
-        <ThoughtDeleteButton deleteAction={deleteAction} />
+        <ThoughtDeleteButton
+          deleteAction={deleteAction}
+          readOnlyMode={governanceReadOnly}
+        />
       </div>
 
       {/* Content + Edit */}
-      <ThoughtEditor thought={thought} editAction={editAction} />
+      <ThoughtEditor
+        thought={thought}
+        editAction={editAction}
+        readOnlyMode={governanceReadOnly}
+      />
 
       {/* Metadata panel */}
       {(topics.length > 0 ||
@@ -211,7 +229,10 @@ export default async function ThoughtDetailPage({
         </div>
       )}
 
-      <ReflectionComposer thoughtId={thought.id} />
+      <ReflectionComposer
+        thoughtId={thought.id}
+        readOnlyMode={governanceReadOnly}
+      />
     </div>
   );
 }

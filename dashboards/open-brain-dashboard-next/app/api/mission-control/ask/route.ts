@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchThoughts } from "@/lib/api";
+import { getBrainKey } from "@/lib/auth";
 
 /*
  * Ask Open Brain — Phase C.
@@ -74,8 +75,10 @@ async function synthesize(
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.MCP_ACCESS_KEY;
-  if (!apiKey) {
+  let apiKey: string;
+  try {
+    apiKey = getBrainKey();
+  } catch {
     return NextResponse.json({ error: "Company Memory is not configured." }, { status: 500 });
   }
 

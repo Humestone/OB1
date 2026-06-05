@@ -6,9 +6,14 @@ import { PRIORITY_LEVELS, getPriorityLevel } from "@/lib/types";
 interface PriorityDotProps {
   importance: number;
   onPriorityChange: (newImportance: number) => void;
+  disabled?: boolean;
 }
 
-export function PriorityDot({ importance, onPriorityChange }: PriorityDotProps) {
+export function PriorityDot({
+  importance,
+  onPriorityChange,
+  disabled = false,
+}: PriorityDotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const level = getPriorityLevel(importance);
@@ -28,12 +33,18 @@ export function PriorityDot({ importance, onPriorityChange }: PriorityDotProps) 
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
+        disabled={disabled}
         onClick={(e) => {
           e.stopPropagation();
+          if (disabled) return;
           setIsOpen(!isOpen);
         }}
-        className="group flex items-center gap-1.5 hover:bg-bg-hover rounded px-1 py-0.5 transition-colors"
-        title={`${level.label} priority (${importance})`}
+        className="group flex items-center gap-1.5 hover:bg-bg-hover rounded px-1 py-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        title={
+          disabled
+            ? "Blocked by read-only governance pilot"
+            : `${level.label} priority (${importance})`
+        }
       >
         <span className={`w-2.5 h-2.5 rounded-full ${level.color}`} />
         <span className="text-xs text-text-muted group-hover:text-text-secondary hidden sm:inline">

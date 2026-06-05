@@ -23,6 +23,7 @@ interface KanbanCardProps {
   onPriorityChange: (thoughtId: string, importance: number) => void;
   showArchiveButton?: boolean;
   onArchive?: (thoughtId: string) => void;
+  readOnlyMode?: boolean;
 }
 
 export function KanbanCard({
@@ -31,6 +32,7 @@ export function KanbanCard({
   onPriorityChange,
   showArchiveButton = false,
   onArchive,
+  readOnlyMode = false,
 }: KanbanCardProps) {
   const {
     attributes,
@@ -39,7 +41,7 @@ export function KanbanCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: thought.id });
+  } = useSortable({ id: thought.id, disabled: readOnlyMode });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -57,7 +59,7 @@ export function KanbanCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(readOnlyMode ? undefined : listeners)}
       onClick={() => onCardClick(thought)}
       className={`bg-bg-surface border rounded-lg p-3 cursor-pointer select-none transition-all ${
         isDragging
@@ -69,6 +71,7 @@ export function KanbanCard({
         <PriorityDot
           importance={thought.importance}
           onPriorityChange={(val) => onPriorityChange(thought.id, val)}
+          disabled={readOnlyMode}
         />
         <TypeBadge type={thought.type} />
       </div>
@@ -95,12 +98,18 @@ export function KanbanCard({
           {showArchiveButton && onArchive && (
             <button
               type="button"
+              disabled={readOnlyMode}
               onClick={(e) => {
                 e.stopPropagation();
+                if (readOnlyMode) return;
                 onArchive(thought.id);
               }}
-              className="text-[10px] text-text-muted hover:text-text-secondary transition-colors"
-              title="Archive"
+              className="text-[10px] text-text-muted hover:text-text-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                readOnlyMode
+                  ? "Blocked by read-only governance pilot"
+                  : "Archive"
+              }
             >
               ✓
             </button>

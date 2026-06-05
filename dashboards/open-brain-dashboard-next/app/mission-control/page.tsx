@@ -1,6 +1,7 @@
 import "./cockpit.css";
 import Cockpit from "@/components/mission-control/Cockpit";
 import { getCockpitLive } from "@/lib/mission-control";
+import { getBrainKey } from "@/lib/auth";
 
 export const metadata = {
   title: "Mission Control | HumeStone",
@@ -11,15 +12,12 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function MissionControlPage() {
-  // Read-only Company Memory access via the dashboard's server-side key.
-  const apiKey = process.env.MCP_ACCESS_KEY;
+  // Read-only Company Memory access via the dashboard's server-side brain key.
   let live = null;
-  if (apiKey) {
-    try {
-      live = await getCockpitLive(apiKey);
-    } catch {
-      live = null; // fall back to sample data
-    }
+  try {
+    live = await getCockpitLive(getBrainKey());
+  } catch {
+    live = null; // missing key or fetch error → fall back to sample data
   }
 
   if (!live) return <Cockpit />;

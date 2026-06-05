@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteThought } from "@/lib/api";
 import { requireSession, AuthError } from "@/lib/auth";
+import {
+  governanceReadOnlyPayload,
+  isGovernanceReadOnly,
+} from "@/lib/governance";
 
 export async function POST(request: NextRequest) {
+  if (isGovernanceReadOnly()) {
+    return NextResponse.json(governanceReadOnlyPayload("resolve_duplicates"), {
+      status: 403,
+    });
+  }
+
   let apiKey: string;
   try {
     ({ apiKey } = await requireSession());

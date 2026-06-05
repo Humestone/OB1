@@ -78,6 +78,13 @@ export default async function AgentMemoryPage({
     return `/agent-memory?${sp.toString()}`;
   }
 
+  function scopedUrl(path: string) {
+    const sp = new URLSearchParams();
+    sp.set("workspace_id", workspaceId);
+    if (projectId) sp.set("project_id", projectId);
+    return `${path}?${sp.toString()}`;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -108,14 +115,14 @@ export default async function AgentMemoryPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <span className="ob1-brand-kicker">Nate Jones Personal OB1</span>
+          <span className="ob1-brand-kicker">HumeStone Company Memory</span>
           <p className="font-mono text-xs text-text-muted">
             {workspaceId}
             <span className="mx-2 text-text-muted/60">/</span>
             {projectId || "all-projects"}
           </p>
         <Link
-          href="/agent-memory/traces"
+          href={scopedUrl("/agent-memory/traces")}
           className="ob1-command-button h-9 px-3 text-sm"
         >
           Recall traces
@@ -158,7 +165,7 @@ export default async function AgentMemoryPage({
                 <tr key={memory.memory_id} className="ob1-memory-row align-top">
                   <td className="px-4 py-3">
                     <Link
-                      href={`/agent-memory/${memory.memory_id}`}
+                      href={scopedUrl(`/agent-memory/${memory.memory_id}`)}
                       className="font-medium text-text-primary hover:text-violet transition-colors"
                     >
                       {memory.summary}

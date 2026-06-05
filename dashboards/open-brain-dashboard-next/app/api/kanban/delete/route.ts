@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession, AuthError } from "@/lib/auth";
 import { deleteThought } from "@/lib/api";
+import {
+  governanceReadOnlyPayload,
+  isGovernanceReadOnly,
+} from "@/lib/governance";
 
 export async function POST(request: NextRequest) {
   let apiKey: string;
@@ -10,6 +14,12 @@ export async function POST(request: NextRequest) {
     if (err instanceof AuthError)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     throw err;
+  }
+
+  if (isGovernanceReadOnly()) {
+    return NextResponse.json(governanceReadOnlyPayload("kanban_delete"), {
+      status: 403,
+    });
   }
 
   try {

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession, AuthError } from "@/lib/auth";
 import { updateThought } from "@/lib/api";
+import {
+  governanceReadOnlyPayload,
+  isGovernanceReadOnly,
+} from "@/lib/governance";
 
 const VALID_STATUSES = [
   "new",
@@ -19,6 +23,12 @@ export async function POST(request: NextRequest) {
     if (err instanceof AuthError)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     throw err;
+  }
+
+  if (isGovernanceReadOnly()) {
+    return NextResponse.json(governanceReadOnlyPayload("kanban_update"), {
+      status: 403,
+    });
   }
 
   try {

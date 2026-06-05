@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
+  agentMemoryDefaults,
   fetchAgentMemory,
   reviewAgentMemory,
 } from "@/lib/agent-memory";
@@ -20,16 +21,25 @@ export const dynamic = "force-dynamic";
 
 export default async function AgentMemoryDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const { apiKey } = await requireSessionOrRedirect();
   const { id } = await params;
+  const query = await searchParams;
+  const defaults = agentMemoryDefaults();
+  const workspaceId = query.workspace_id || defaults.workspaceId;
+  const projectId = query.project_id ?? defaults.projectId;
   const governanceReadOnly = isGovernanceReadOnly();
 
   let memory;
   try {
-    memory = await fetchAgentMemory(apiKey, id);
+    memory = await fetchAgentMemory(apiKey, id, {
+      workspace_id: workspaceId,
+      project_id: projectId,
+    });
   } catch {
     notFound();
   }

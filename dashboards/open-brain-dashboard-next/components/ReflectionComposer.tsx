@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type {
-  ReflectionInput,
-  ReflectionFactor,
-} from "@/lib/types";
+import type { ReflectionInput, ReflectionFactor } from "@/lib/types";
+import {
+  GOVERNANCE_READ_ONLY_ERROR,
+  readGovernanceReadOnlyFromDom,
+} from "@/lib/governance";
 
 const REFLECTION_TYPES = [
   "decision_trace",
@@ -22,19 +23,25 @@ const emptyForm: ReflectionInput = {
   reflection_type: "decision_trace",
 };
 
-export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
+export function ReflectionComposer({
+  thoughtId,
+  readOnlyMode = false,
+}: {
+  thoughtId: string;
+  readOnlyMode?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<ReflectionInput>({ ...emptyForm });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const readOnly = readOnlyMode || readGovernanceReadOnlyFromDom();
 
   function reset() {
     setForm({ ...emptyForm, options: [], factors: [] });
     setError(null);
   }
 
-  // --- options helpers ---
   function addOption() {
     setForm((f) => ({
       ...f,
@@ -56,7 +63,6 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
     }));
   }
 
-  // --- factors helpers ---
   function addFactor() {
     setForm((f) => ({
       ...f,
@@ -86,6 +92,10 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (readOnly) {
+      setError(GOVERNANCE_READ_ONLY_ERROR);
+      return;
+    }
 
     if (!form.trigger_context.trim() && !form.conclusion.trim()) {
       setError("At least trigger context or conclusion is required.");
@@ -95,7 +105,6 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
     setSubmitting(true);
     setError(null);
 
-    // Filter out empty options/factors
     const payload: ReflectionInput = {
       ...form,
       options: form.options.filter((o) => o.label.trim()),
@@ -128,9 +137,15 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-sm text-violet hover:text-violet-dim transition-colors"
+        disabled={readOnly}
+        title={
+          readOnly
+            ? "Blocked by read-only governance pilot"
+            : "Add reflection"
+        }
+        className="text-sm text-violet hover:text-violet-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        + Add Reflection
+        {readOnly ? "+ Add Reflection (Blocked)" : "+ Add Reflection"}
       </button>
     );
   }
@@ -142,11 +157,11 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
     >
       <h3 className="text-sm font-medium text-text-primary">New Reflection</h3>
 
-      {/* Reflection type */}
       <div>
         <label className="block text-xs text-text-muted mb-1">Type</label>
         <select
           value={form.reflection_type}
+          disabled={readOnly}
           onChange={(e) =>
             setForm((f) => ({ ...f, reflection_type: e.target.value }))
           }
@@ -160,13 +175,13 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
         </select>
       </div>
 
-      {/* Trigger context */}
       <div>
         <label className="block text-xs text-text-muted mb-1">
           What prompted this?
         </label>
         <textarea
           value={form.trigger_context}
+          disabled={readOnly}
           onChange={(e) =>
             setForm((f) => ({ ...f, trigger_context: e.target.value }))
           }
@@ -176,12 +191,12 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
         />
       </div>
 
-      {/* Options */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="text-xs text-text-muted">Options</label>
           <button
             type="button"
+            disabled={readOnly}
             onClick={addOption}
             className="text-xs text-violet hover:text-violet-dim transition-colors"
           >
@@ -193,12 +208,14 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
             <input
               type="text"
               value={opt.label}
+              disabled={readOnly}
               onChange={(e) => updateOption(i, e.target.value)}
               placeholder={`Option ${i + 1}`}
               className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-violet"
             />
             <button
               type="button"
+              disabled={readOnly}
               onClick={() => removeOption(i)}
               className="text-xs text-text-muted hover:text-red-400 transition-colors px-2"
             >
@@ -208,12 +225,12 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
         ))}
       </div>
 
-      {/* Factors */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="text-xs text-text-muted">Factors</label>
           <button
             type="button"
+            disabled={readOnly}
             onClick={addFactor}
             className="text-xs text-violet hover:text-violet-dim transition-colors"
           >
@@ -225,6 +242,7 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
             <input
               type="text"
               value={fac.label}
+              disabled={readOnly}
               onChange={(e) => updateFactor(i, "label", e.target.value)}
               placeholder={`Factor ${i + 1}`}
               className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-violet"
@@ -236,6 +254,7 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
                 max="1"
                 step="0.1"
                 value={fac.weight}
+                disabled={readOnly}
                 onChange={(e) =>
                   updateFactor(i, "weight", parseFloat(e.target.value))
                 }
@@ -247,6 +266,7 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
             </div>
             <button
               type="button"
+              disabled={readOnly}
               onClick={() => removeFactor(i)}
               className="text-xs text-text-muted hover:text-red-400 transition-colors px-2"
             >
@@ -256,13 +276,13 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
         ))}
       </div>
 
-      {/* Conclusion */}
       <div>
         <label className="block text-xs text-text-muted mb-1">
           What was decided or learned?
         </label>
         <textarea
           value={form.conclusion}
+          disabled={readOnly}
           onChange={(e) =>
             setForm((f) => ({ ...f, conclusion: e.target.value }))
           }
@@ -272,19 +292,24 @@ export function ReflectionComposer({ thoughtId }: { thoughtId: string }) {
         />
       </div>
 
-      {/* Error */}
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {/* Actions */}
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={submitting}
+          disabled={readOnly || submitting}
+          title={
+            readOnly
+              ? "Blocked by read-only governance pilot"
+              : "Save reflection"
+          }
           className="px-4 py-2 text-sm font-medium bg-violet hover:bg-violet-dim text-white rounded-lg transition-colors disabled:opacity-50"
         >
-          {submitting ? "Saving..." : "Save Reflection"}
+          {readOnly
+            ? "Save Reflection (Blocked)"
+            : submitting
+              ? "Saving..."
+              : "Save Reflection"}
         </button>
         <button
           type="button"
