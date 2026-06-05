@@ -17,10 +17,25 @@ import {
   HEALTH,
   NAV,
   ASK_SUGGESTIONS,
-  ASK_DEMO,
   TONE_HEX,
   type Tone,
+  type Kpi,
+  type Approval,
+  type Run,
+  type Health,
 } from "./sample-data";
+
+type CockpitProps = {
+  hero?: typeof HERO;
+  kpis?: Kpi[];
+  approvals?: Approval[];
+  runs?: Run[];
+  health?: Health[];
+  isLive?: boolean;
+};
+
+type AskResult = { id?: string; title: string; snippet: string; date?: string };
+type AskResponse = { answer: string; results: AskResult[] };
 
 function Pill({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   return (
@@ -54,11 +69,40 @@ function Dial({ pct, accent }: { pct: number; accent: string }) {
   );
 }
 
-export default function Cockpit() {
+export default function Cockpit({
+  hero = HERO,
+  kpis = KPIS,
+  approvals = APPROVALS,
+  runs = RUNS,
+  health = HEALTH,
+  isLive = false,
+}: CockpitProps = {}) {
   const [range, setRange] = useState<"Today" | "7 days" | "28 days">("Today");
   const [active, setActive] = useState("Cockpit");
-  const [asked, setAsked] = useState(false);
   const [query, setQuery] = useState("");
+  const [asking, setAsking] = useState(false);
+  const [answer, setAnswer] = useState<AskResponse | null>(null);
+
+  async function ask(q?: string) {
+    const qq = (q ?? query).trim();
+    if (!qq) return;
+    setQuery(qq);
+    setAsking(true);
+    setAnswer(null);
+    try {
+      const res = await fetch("/api/mission-control/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: qq }),
+      });
+      const d = await res.json();
+      setAnswer(res.ok ? d : { answer: "Couldn't reach Company Memory just now.", results: [] });
+    } catch {
+      setAnswer({ answer: "Couldn't reach Company Memory just now.", results: [] });
+    } finally {
+      setAsking(false);
+    }
+  }
 
   return (
     <div className="mc-root">
@@ -101,8 +145,9 @@ export default function Cockpit() {
           ))}
 
           <div style={{ marginTop: "auto", paddingTop: 16 }}>
-            <div className="mc-caption" style={{ fontSize: 11 }}>
-              Preview · sample data
+            <div className="mc-caption" style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 7 }}>
+              <span className="mc-dot" style={{ ["--mc-tone" as string]: isLive ? "#3ddc97" : "#7c8cff" }} />
+              {isLive ? "Live · Company Memory" : "Preview · sample data"}
             </div>
           </div>
         </nav>
@@ -131,14 +176,14 @@ export default function Cockpit() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <div className="mc-hero-greeting">
-                  Good evening, {HERO.name}. <span className="dim">{HERO.greeting}</span>
+                  Good evening, {hero.name}. <span className="dim">{hero.greeting}</span>
                 </div>
-                <Pill tone={HERO.status.tone}>{HERO.status.label}</Pill>
+                <Pill tone={hero.status.tone}>{hero.status.label}</Pill>
               </div>
               <div className="mc-caption" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                <span>Working on: {HERO.workingOn}</span>
+                <span>Working on: {hero.workingOn}</span>
                 <span style={{ opacity: 0.5 }}>·</span>
-                <span>Updated {HERO.updated}</span>
+                <span>Updated {hero.updated}</span>
               </div>
             </div>
 
@@ -175,7 +220,7 @@ export default function Cockpit() {
 
           {/* KPI row */}
           <div className="mc-grid-3" style={{ marginBottom: 28 }}>
-            {KPIS.map((k) => (
+            {kpis.map((k) => (
               <div
                 key={k.eyebrow}
                 className="mc-card mc-card-wash mc-kpi"
@@ -209,76 +254,91 @@ export default function Cockpit() {
                 placeholder="Ask anything about HumeStone in plain English…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && setAsked(true)}
+                onKeyDown={(e) => e.key === "Enter" && ask()}
               />
               <button
-                onClick={() => setAsked(true)}
+                onClick={() => ask()}
+                disabled={asking}
                 style={{
                   flexShrink: 0,
                   padding: "0 18px",
                   borderRadius: 12,
                   border: 0,
-                  cursor: "pointer",
+                  cursor: asking ? "default" : "pointer",
+                  opacity: asking ? 0.7 : 1,
                   fontWeight: 600,
                   fontSize: 13.5,
                   color: "#2a1407",
                   background: "linear-gradient(160deg, #ffc371, #ff8a4c 60%, #d97757)",
                 }}
               >
-                Ask
+                {asking ? "…" : "Ask"}
               </button>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {ASK_SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  className="mc-chip"
-                  onClick={() => {
-                    setQuery(s);
-                    setAsked(true);
-                  }}
-                >
+                <button key={s} className="mc-chip" onClick={() => ask(s)}>
                   {s}
                 </button>
               ))}
             </div>
 
-            {asked && (
+            {(asking || answer) && (
               <div
                 style={{
                   marginTop: 18,
                   padding: 18,
                   borderRadius: 14,
-                  background: "rgba(0,0,0,0.22)",
-                  border: "1px solid rgba(236,229,209,0.1)",
+                  background: "rgba(0,0,0,0.28)",
+                  border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                <div className="mc-eyebrow" style={{ marginBottom: 8 }}>
-                  {query || ASK_DEMO.question}
-                </div>
-                <div style={{ fontSize: 14.5, lineHeight: 1.6, color: "rgba(242,239,229,0.92)" }}>
-                  {ASK_DEMO.answer}
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
-                  {ASK_DEMO.sources.map((s) => (
-                    <span
-                      key={s}
-                      style={{
-                        fontSize: 11,
-                        padding: "4px 9px",
-                        borderRadius: 7,
-                        background: "rgba(167,139,250,0.12)",
-                        border: "1px solid rgba(167,139,250,0.26)",
-                        color: "rgba(238,241,247,0.8)",
-                      }}
+                {asking && (
+                  <div className="mc-caption" style={{ fontSize: 13 }}>
+                    Searching Company Memory…
+                  </div>
+                )}
+                {!asking && answer && (
+                  <>
+                    <div style={{ fontSize: 14.5, lineHeight: 1.6, color: "rgba(238,241,247,0.92)" }}>
+                      {answer.answer}
+                    </div>
+                    {answer.results.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+                        {answer.results.map((r, i) => (
+                          <div
+                            key={r.id || i}
+                            style={{
+                              padding: "10px 12px",
+                              borderRadius: 10,
+                              background: "rgba(255,255,255,0.03)",
+                              border: "1px solid rgba(255,255,255,0.07)",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600 }}>{r.title}</div>
+                              {r.date && (
+                                <div className="mc-caption" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+                                  {new Date(r.date).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="mc-caption" style={{ fontSize: 12, marginTop: 4 }}>
+                              {r.snippet}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div
+                      className="mc-caption"
+                      style={{ marginTop: 12, fontSize: 11.5, display: "flex", alignItems: "center", gap: 7 }}
                     >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-                <div className="mc-caption" style={{ marginTop: 12, fontStyle: "italic", fontSize: 11.5 }}>
-                  {ASK_DEMO.note}
-                </div>
+                      <span className="mc-dot" style={{ ["--mc-tone" as string]: "#3ddc97" }} />
+                      Live semantic search over Company Memory
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -296,7 +356,12 @@ export default function Cockpit() {
                   <div className="mc-caption">Stone has these ready — it just needs your yes or no.</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {APPROVALS.map((a) => (
+                  {approvals.length === 0 && (
+                    <div className="mc-row">
+                      <div className="mc-caption">Nothing waiting on you right now — you're all clear.</div>
+                    </div>
+                  )}
+                  {approvals.map((a) => (
                     <div key={a.title} className="mc-row" style={{ flexDirection: "column", gap: 8 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                         <div className="mc-row-title">{a.title}</div>
@@ -317,7 +382,7 @@ export default function Cockpit() {
                   <div className="mc-caption">Live work by Stone and its workers.</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {RUNS.map((r) => {
+                  {runs.map((r) => {
                     const tone: Tone = r.state === "done" ? "good" : r.state === "building" ? "info" : "neutral";
                     const label = r.state === "done" ? "Done" : r.state === "building" ? "Building" : "Healthy";
                     return (
@@ -376,7 +441,7 @@ export default function Cockpit() {
                   <div className="mc-caption">The brain, the workers, and the content pipeline.</div>
                 </div>
                 <div className="mc-card" style={{ padding: 18, display: "flex", flexDirection: "column", gap: 16 }}>
-                  {HEALTH.map((h) => (
+                  {health.map((h) => (
                     <div key={h.label} style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ position: "relative", width: 72, height: 72, flexShrink: 0 }}>
                         <Dial pct={h.pct} accent={h.accent} />
