@@ -37,6 +37,42 @@ function summarize(content: string): { title: string; snippet: string } {
   return { title, snippet };
 }
 
+// Synthesize a plain-English answer from the retrieved records via OpenRouter.
+// Returns null when no key is set or the call fails (caller falls back to the list).
+async function synthesize(
+  question: string,
+  results: { title: string; snippet: string; date?: string }[]
+): Promise<string | null> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key || results.length === 0) return null;
+  const context = results
+    .map((r, i) => `[${i + 1}] ${r.title} (${(r.date || "").slice(0, 10)}): ${r.snippet}`)
+    .join("\n");
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: process.env.OPENROUTER_MODEL || "anthropic/claude-3.5-haiku",
+        max_tokens: 320,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are Stone, James's AI chief of staff for HumeStone. Answer the question in 2-4 plain-English sentences using ONLY the provided Company Memory records. Be specific and concise; no jargon. If the records don't answer it, say so briefly. Never invent facts.",
+          },
+          { role: "user", content: `Question: ${question}\n\nCompany Memory records:\n${context}` },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return d?.choices?.[0]?.message?.content?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.MCP_ACCESS_KEY;
   if (!apiKey) {
@@ -66,12 +102,15 @@ export async function POST(req: NextRequest) {
       const { title, snippet } = summarize(r.content || "");
       return { id: r.id, title, snippet, date: r.created_at };
     });
-    const answer = results.length
-      ? `Here ${results.length === 1 ? "is the" : "are the"} ${results.length} most relevant ${
-          results.length === 1 ? "record" : "records"
-        } in Company Memory for "${question}":`
-      : `I couldn't find anything in Company Memory matching "${question}". Try rephrasing it.`;
-    return NextResponse.json({ answer, results });
+    const synthesized = await synthesize(question, results);
+    const answer =
+      synthesized ||
+      (results.length
+        ? `Here ${results.length === 1 ? "is the" : "are the"} ${results.length} most relevant ${
+            results.length === 1 ? "record" : "records"
+          } in Company Memory for "${question}":`
+        : `I couldn't find anything in Company Memory matching "${question}". Try rephrasing it.`);
+    return NextResponse.json({ answer, results, synthesized: !!synthesized });
   } catch {
     return NextResponse.json({ answer: "Couldn't reach Company Memory just now.", results: [] }, { status: 502 });
   }

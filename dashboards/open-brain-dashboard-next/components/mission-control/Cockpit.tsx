@@ -23,6 +23,7 @@ import {
   type Approval,
   type Run,
   type Health,
+  type Gate,
 } from "./sample-data";
 
 type CockpitProps = {
@@ -31,6 +32,7 @@ type CockpitProps = {
   approvals?: Approval[];
   runs?: Run[];
   health?: Health[];
+  gates?: Gate[];
   isLive?: boolean;
 };
 
@@ -75,6 +77,7 @@ export default function Cockpit({
   approvals = APPROVALS,
   runs = RUNS,
   health = HEALTH,
+  gates = GATES,
   isLive = false,
 }: CockpitProps = {}) {
   const [range, setRange] = useState<"Today" | "7 days" | "28 days">("Today");
@@ -410,7 +413,7 @@ export default function Cockpit({
                   <div className="mc-caption">Things Stone will never do without asking you first.</div>
                 </div>
                 <div className="mc-card" style={{ padding: 6 }}>
-                  {GATES.map((g, i) => (
+                  {gates.map((g, i) => (
                     <div
                       key={g.label}
                       style={{

@@ -1,5 +1,5 @@
 import "server-only";
-import { fetchThoughts } from "./api";
+import { fetchThoughts, searchThoughts } from "./api";
 import type { Tone } from "@/components/mission-control/sample-data";
 
 /*
@@ -15,6 +15,8 @@ export interface CockpitLive {
   kpis: { eyebrow: string; value: string; caption: string; accent: string; tone: Tone }[];
   approvals: { title: string; why: string; plain: string; tone: Tone }[];
   runs: { title: string; state: "building" | "done" | "healthy"; plain: string }[];
+  gates: { label: string; state: string; plain: string; tone: Tone }[];
+  health: { label: string; pct: number; caption: string; accent: string }[];
 }
 
 interface ParsedRecord {
@@ -145,6 +147,62 @@ export async function getCockpitLive(apiKey: string): Promise<CockpitLive | null
     },
   ];
 
+  // ---- System health (live) ----
+  const total = res?.total ?? records.length;
+  const week = 7 * 24 * 3600 * 1000;
+  const recentCount = rows.filter((r) => r.created_at && now - new Date(r.created_at).getTime() <= week).length;
+
+  // Cheap probe of whether meaning-based (semantic) search is up.
+  let aiOk = true;
+  try {
+    await searchThoughts(apiKey, "status", "semantic", 1);
+  } catch {
+    aiOk = false;
+  }
+
+  const health = [
+    { label: "Company Memory", pct: 100, caption: `${total.toLocaleString()} records · in sync`, accent: "#3ddc97" },
+    {
+      label: "Smart search",
+      pct: aiOk ? 100 : 55,
+      caption: aiOk ? "Meaning-based search on" : "Keyword only — AI credits low",
+      accent: aiOk ? "#7c8cff" : "#ffb454",
+    },
+    {
+      label: "Recent activity",
+      pct: 100,
+      caption: `${recentCount} update${recentCount === 1 ? "" : "s"} this week`,
+      accent: "#a78bfa",
+    },
+  ];
+
+  // ---- Gate ledger: standing safety policy + live Hermes hold ----
+  const hermesHeld = records.some(
+    (r) =>
+      /hermes/i.test(`${r.project} ${r.blockedBy} ${r.next}`) &&
+      /hold|held|pending|approval/i.test(`${r.blockedBy} ${r.next}`)
+  );
+  const gates = [
+    {
+      label: "Production deploys",
+      state: "Gated",
+      plain: "Stone always asks you before anything goes live.",
+      tone: "attention" as Tone,
+    },
+    {
+      label: "Secrets & credentials",
+      state: "Gated",
+      plain: "No key or access changes without your explicit OK.",
+      tone: "attention" as Tone,
+    },
+    {
+      label: "Hermes provider retry",
+      state: hermesHeld ? "Held" : "Ready",
+      plain: hermesHeld ? "Paused until you approve a provider/key retry." : "No active hold.",
+      tone: (hermesHeld ? "blocked" : "good") as Tone,
+    },
+  ];
+
   return {
     live: true,
     hero: {
@@ -157,5 +215,7 @@ export async function getCockpitLive(apiKey: string): Promise<CockpitLive | null
     kpis,
     approvals,
     runs,
+    gates,
+    health,
   };
 }

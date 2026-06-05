@@ -30,6 +30,8 @@ export default async function MissionControlPage() {
       kpis={live.kpis}
       approvals={live.approvals}
       runs={live.runs}
+      gates={live.gates}
+      health={live.health}
       isLive
     />
   );
