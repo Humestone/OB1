@@ -1,14 +1,16 @@
 name: OB1 PR Gate
 
-# Branch protection recommendation:
-# After this action is working, enable branch protection on main:
-# - Require the "OB1 PR Gate" workflow to pass its checks
-# - Require at least 1 approving review from a maintainer
-# This means: automated agent passes → human admin approves → merge allowed
+# ── Branch protection setup (admin-only, one-time) ──────────────
+# 1. Settings → Branches → Add branch protection rule for "main"
+# 2. Check "Require status checks to pass before merging"
+# 3. Search for and add: "OB1 Review" (the job name below)
+# 4. Optionally check "Require branches to be up to date"
+# 5. Check "Require approvals" with at least 1 approving review
+# Result: automated gate passes → human admin approves → merge allowed
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [main]
 
 permissions:
