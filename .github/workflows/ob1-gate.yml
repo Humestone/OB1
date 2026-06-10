@@ -28,34 +28,53 @@ jobs:
           fetch-depth: 0
 
       - name: Fetch base branch
-        run: git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          # Full fetch (no --depth) so the merge base with the PR head always
+          # exists. A shallow base fetch can lose the merge base when main has
+          # advanced, silently under-reporting the changed-file list.
+          git fetch origin "$BASE_REF"
+          # Fail closed if the merge base still cannot be resolved.
+          git merge-base "origin/$BASE_REF" HEAD >/dev/null
 
       - name: Install metadata schema validator
         run: python3 -m pip install check-jsonschema
 
       - name: Get changed files
         id: changed
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
-          # Get files changed in this PR
-          changed=$(git diff --name-only origin/main...HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
-          echo "files<<EOF" >> $GITHUB_OUTPUT
-          echo "$changed" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          # Get files changed in this PR, diffed against the merge base.
+          # No fallback: if this diff fails, the gate fails closed instead of
+          # silently checking only the last commit of a multi-commit PR.
+          changed=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$changed" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
           # Identify contribution folders (e.g., recipes/email-import/)
           # Exclude _template folders and top-level files
           contrib_dirs=$(echo "$changed" | grep -E '^(recipes|schemas|dashboards|integrations|skills|primitives|extensions)/' | grep -v '/_template/' | cut -d'/' -f1,2 | sort -u || true)
-          echo "contrib_dirs<<EOF" >> $GITHUB_OUTPUT
-          echo "$contrib_dirs" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "contrib_dirs<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$contrib_dirs" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Run review checks
         id: review
+        env:
+          # SECURITY: untrusted, PR-author-controlled values (title, changed
+          # file names) are passed via the environment, never interpolated
+          # into the script body. Raw ${{ }} interpolation of the PR title
+          # inside run: previously allowed arbitrary shell execution in the
+          # runner, including forcing failed=false into $GITHUB_OUTPUT.
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+          CONTRIB_DIRS: ${{ steps.changed.outputs.contrib_dirs }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          CHANGED_FILES="${{ steps.changed.outputs.files }}"
-          CONTRIB_DIRS="${{ steps.changed.outputs.contrib_dirs }}"
-          PR_TITLE="${{ github.event.pull_request.title }}"
-
           pass_count=0
           fail_count=0
           results=""
@@ -71,21 +90,102 @@ jobs:
             fail_count=$((fail_count + 1))
           }
 
-          # Skip contribution checks for docs/governance PRs.
-          # Detected by PR title prefix OR by no contribution dirs being touched.
-          is_docs_pr=false
-          if echo "$PR_TITLE" | grep -qiE '^\[docs\]'; then
-            is_docs_pr=true
-          elif [ -z "$CONTRIB_DIRS" ]; then
-            is_docs_pr=true
-          fi
+          # ─── Rule 4: No credentials ───
+          # Defined as a function so it ALWAYS runs, including for docs/
+          # governance PRs that skip the contribution checks.
+          run_credential_scan() {
+            rule4_pass=true
+            rule4_detail=""
+            # Scan all changed text files for credential patterns.
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              [ ! -f "$f" ] && continue
 
-          if [ "$is_docs_pr" = true ]; then
-            results="This PR modifies docs or repo governance files. Contribution checks skipped.\n\n✅ No issues found."
-            echo "comment<<EOF" >> $GITHUB_OUTPUT
-            echo -e "## OB1 PR Gate\n\n${results}" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "failed=false" >> $GITHUB_OUTPUT
+              # Skip binary files to avoid noisy false positives.
+              if ! grep -Iq . "$f"; then
+                continue
+              fi
+
+              matches=$(grep -nE '(sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|SUPABASE_SERVICE_ROLE_KEY\s*=\s*"?ey)' "$f" 2>/dev/null || true)
+              if [ -n "$matches" ]; then
+                rule4_detail="${rule4_detail}  - \`$f\`: potential credential found\n"
+                rule4_pass=false
+                secret_blocked=true
+              fi
+
+              # Check for .env files with actual values
+              if echo "$f" | grep -qE '\.env$'; then
+                has_values=$(grep -E '^[A-Z_]+=.+' "$f" 2>/dev/null | grep -vE '=(your-|<|example|placeholder|TODO)' || true)
+                if [ -n "$has_values" ]; then
+                  rule4_detail="${rule4_detail}  - \`$f\`: .env file appears to contain real values\n"
+                  rule4_pass=false
+                  secret_blocked=true
+                fi
+              fi
+            done <<< "$CHANGED_FILES"
+
+            if [ "$rule4_pass" = true ]; then
+              pass_check "No credentials" "No API keys, tokens, or secrets detected"
+            else
+              fail_check "No credentials" "Potential credentials found:\n${rule4_detail}"
+            fi
+          }
+
+          # ─── Rule 8: No binary blobs ───
+          # Also a function so it always runs, including for docs PRs.
+          run_binary_scan() {
+            rule8_pass=true
+            rule8_detail=""
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              [ ! -f "$f" ] && continue
+
+              # Check file size (1MB = 1048576 bytes)
+              size=$(wc -c < "$f" 2>/dev/null || echo "0")
+              if [ "$size" -gt 1048576 ]; then
+                rule8_detail="${rule8_detail}  - \`$f\`: file is $(( size / 1024 ))KB (max 1MB)\n"
+                rule8_pass=false
+              fi
+
+              # Check banned extensions
+              if echo "$f" | grep -qE '\.(exe|dmg|zip|tar\.gz|tar\.bz2|rar|7z|msi|pkg|deb|rpm)$'; then
+                rule8_detail="${rule8_detail}  - \`$f\`: binary/archive files not allowed\n"
+                rule8_pass=false
+              fi
+            done <<< "$CHANGED_FILES"
+
+            if [ "$rule8_pass" = true ]; then
+              pass_check "No binary blobs" "No oversized or binary files"
+            else
+              fail_check "No binary blobs" "Binary/large file issues:\n${rule8_detail}"
+            fi
+          }
+
+          # Docs/governance PRs: decided ONLY by the actual changed-file list.
+          # The PR title is never the authority for skipping checks — a
+          # crafted "[docs] ..." title previously bypassed every check,
+          # including the credential and binary scans, regardless of which
+          # files were changed. When no contribution folders are touched, the
+          # contribution checks are skipped but the security scans still run
+          # and still block via the failed= output.
+          if [ -z "$CONTRIB_DIRS" ]; then
+            run_credential_scan
+            run_binary_scan
+
+            total=$((pass_count + fail_count))
+            if [ "$fail_count" -gt 0 ]; then
+              summary="**Result: ${pass_count}/${total} security scans passed. Please fix the issues above and push again.**"
+              echo "failed=true" >> "$GITHUB_OUTPUT"
+            else
+              summary="**Result: All ${total} security scans passed.**"
+              echo "failed=false" >> "$GITHUB_OUTPUT"
+            fi
+            echo "secret_blocked=$secret_blocked" >> "$GITHUB_OUTPUT"
+
+            comment="## OB1 PR Gate\n\nThis PR does not touch contribution folders (docs/governance change). Contribution checks were skipped, but credential and binary-file scans still ran.\n\n${results}\n${summary}"
+            echo "comment<<EOF" >> "$GITHUB_OUTPUT"
+            echo -e "$comment" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -155,42 +255,8 @@ jobs:
             fail_check "Metadata valid" "Metadata issues:\n${rule3_detail}"
           fi
 
-          # ─── Rule 4: No credentials ───
-          rule4_pass=true
-          rule4_detail=""
-          # Scan all changed text files for credential patterns.
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            [ ! -f "$f" ] && continue
-
-            # Skip binary files to avoid noisy false positives.
-            if ! grep -Iq . "$f"; then
-              continue
-            fi
-
-            matches=$(grep -nE '(sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|SUPABASE_SERVICE_ROLE_KEY\s*=\s*"?ey)' "$f" 2>/dev/null || true)
-            if [ -n "$matches" ]; then
-              rule4_detail="${rule4_detail}  - \`$f\`: potential credential found\n"
-              rule4_pass=false
-              secret_blocked=true
-            fi
-
-            # Check for .env files with actual values
-            if echo "$f" | grep -qE '\.env$'; then
-              has_values=$(grep -E '^[A-Z_]+=.+' "$f" 2>/dev/null | grep -vE '=(your-|<|example|placeholder|TODO)' || true)
-              if [ -n "$has_values" ]; then
-                rule4_detail="${rule4_detail}  - \`$f\`: .env file appears to contain real values\n"
-                rule4_pass=false
-                secret_blocked=true
-              fi
-            fi
-          done <<< "$CHANGED_FILES"
-
-          if [ "$rule4_pass" = true ]; then
-            pass_check "No credentials" "No API keys, tokens, or secrets detected"
-          else
-            fail_check "No credentials" "Potential credentials found:\n${rule4_detail}"
-          fi
+          # ─── Rule 4: No credentials (see run_credential_scan above) ───
+          run_credential_scan
 
           # ─── Rule 5: SQL safety ───
           rule5_pass=true
@@ -243,7 +309,11 @@ jobs:
             case "$category" in
               recipes)
                 has_artifact=$(echo "$dir_files" | grep -E '\.(sql|ts|js|py)$' || true)
-                readme_has_steps=$(grep -c -iE '^\s*[0-9]+\.' "$dir/README.md" 2>/dev/null || echo "0")
+                # grep -c prints "0" itself on no match (and exits 1), so an
+                # "|| echo 0" fallback produced "0\n0", which broke the -lt
+                # comparison below and let empty recipes pass silently.
+                readme_has_steps=$(grep -c -iE '^\s*[0-9]+\.' "$dir/README.md" 2>/dev/null || true)
+                readme_has_steps=${readme_has_steps:-0}
                 if [ -z "$has_artifact" ] && [ "$readme_has_steps" -lt 3 ]; then
                   rule6_detail="${rule6_detail}  - \`$dir\`: recipes need code files (.sql/.ts/.js/.py) or detailed step-by-step instructions in README\n"
                   rule6_pass=false
@@ -317,32 +387,8 @@ jobs:
             fail_check "PR format" "PR title must start with \`[recipes]\`, \`[schemas]\`, \`[dashboards]\`, \`[integrations]\`, \`[skills]\`, \`[primitives]\`, \`[extensions]\`, or \`[docs]\` followed by a space and description"
           fi
 
-          # ─── Rule 8: No binary blobs ───
-          rule8_pass=true
-          rule8_detail=""
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            [ ! -f "$f" ] && continue
-
-            # Check file size (1MB = 1048576 bytes)
-            size=$(wc -c < "$f" 2>/dev/null || echo "0")
-            if [ "$size" -gt 1048576 ]; then
-              rule8_detail="${rule8_detail}  - \`$f\`: file is $(( size / 1024 ))KB (max 1MB)\n"
-              rule8_pass=false
-            fi
-
-            # Check banned extensions
-            if echo "$f" | grep -qE '\.(exe|dmg|zip|tar\.gz|tar\.bz2|rar|7z|msi|pkg|deb|rpm)$'; then
-              rule8_detail="${rule8_detail}  - \`$f\`: binary/archive files not allowed\n"
-              rule8_pass=false
-            fi
-          done <<< "$CHANGED_FILES"
-
-          if [ "$rule8_pass" = true ]; then
-            pass_check "No binary blobs" "No oversized or binary files"
-          else
-            fail_check "No binary blobs" "Binary/large file issues:\n${rule8_detail}"
-          fi
+          # ─── Rule 8: No binary blobs (see run_binary_scan above) ───
+          run_binary_scan
 
           # ─── Rule 9: README completeness ───
           rule9_pass=true
@@ -602,13 +648,13 @@ jobs:
           total=$((pass_count + fail_count))
           if [ "$fail_count" -gt 0 ]; then
             summary="**Result: ${pass_count}/${total} checks passed. Please fix the issues above and push again.**"
-            echo "failed=true" >> $GITHUB_OUTPUT
+            echo "failed=true" >> "$GITHUB_OUTPUT"
           else
             summary="**Result: All ${total} checks passed! Ready for human review.**"
-            echo "failed=false" >> $GITHUB_OUTPUT
+            echo "failed=false" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "secret_blocked=$secret_blocked" >> $GITHUB_OUTPUT
+          echo "secret_blocked=$secret_blocked" >> "$GITHUB_OUTPUT"
 
           comment="## OB1 PR Gate\n\n${results}\n${summary}"
 
@@ -617,15 +663,26 @@ jobs:
             comment="${comment}\n\n---\n\n### Post-Merge Tasks\n\n*These don't block merge — they're reminders for admins after this PR lands.*\n\n${reminders}"
           fi
 
-          echo "comment<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$comment" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "comment<<EOF" >> "$GITHUB_OUTPUT"
+          echo -e "$comment" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Write gate artifact
         env:
+          # SECURITY: PR title, file names, and author login are untrusted;
+          # pass them via env, never raw ${{ }} interpolation inside run:.
           REVIEW_COMMENT: ${{ steps.review.outputs.comment }}
           REVIEW_FAILED: ${{ steps.review.outputs.failed }}
           SECRET_BLOCKED: ${{ steps.review.outputs.secret_blocked }}
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+          CONTRIB_DIRS: ${{ steps.changed.outputs.contrib_dirs }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          AUTHOR_LOGIN: ${{ github.event.pull_request.user.login }}
+          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           set -euo pipefail
 
@@ -633,17 +690,17 @@ jobs:
 
           printf '%s\n' "$REVIEW_COMMENT" > gate-artifact/ob1-review-summary.md
           printf '%s\n' "$REVIEW_COMMENT" >> "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' "${{ steps.changed.outputs.files }}" > gate-artifact/changed-files.txt
-          printf '%s\n' "${{ steps.changed.outputs.contrib_dirs }}" > gate-artifact/contribution-dirs.txt
+          printf '%s\n' "$CHANGED_FILES" > gate-artifact/changed-files.txt
+          printf '%s\n' "$CONTRIB_DIRS" > gate-artifact/contribution-dirs.txt
 
           jq -n \
-            --argjson pr_number "${{ github.event.pull_request.number }}" \
-            --arg pr_url "${{ github.event.pull_request.html_url }}" \
-            --arg title "${{ github.event.pull_request.title }}" \
-            --arg head_sha "${{ github.event.pull_request.head.sha }}" \
-            --arg author_login "${{ github.event.pull_request.user.login }}" \
-            --arg author_association "${{ github.event.pull_request.author_association }}" \
-            --arg is_draft "${{ github.event.pull_request.draft }}" \
+            --argjson pr_number "$PR_NUMBER" \
+            --arg pr_url "$PR_URL" \
+            --arg title "$PR_TITLE" \
+            --arg head_sha "$HEAD_SHA" \
+            --arg author_login "$AUTHOR_LOGIN" \
+            --arg author_association "$AUTHOR_ASSOCIATION" \
+            --arg is_draft "$IS_DRAFT" \
             --arg failed "$REVIEW_FAILED" \
             --arg secret_blocked "$SECRET_BLOCKED" \
             '{
