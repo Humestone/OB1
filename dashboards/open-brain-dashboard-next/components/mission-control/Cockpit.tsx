@@ -361,7 +361,7 @@ export default function Cockpit({
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {approvals.length === 0 && (
                     <div className="mc-row">
-                      <div className="mc-caption">Nothing waiting on you right now — you're all clear.</div>
+                      <div className="mc-caption">Nothing waiting on you right now — you&apos;re all clear.</div>
                     </div>
                   )}
                   {approvals.map((a) => (
@@ -381,7 +381,7 @@ export default function Cockpit({
                   <div className="mc-eyebrow" style={{ marginBottom: 6 }}>
                     Current runs
                   </div>
-                  <div className="mc-section-head">What's happening now</div>
+                  <div className="mc-section-head">What&apos;s happening now</div>
                   <div className="mc-caption">Live work by Stone and its workers.</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
