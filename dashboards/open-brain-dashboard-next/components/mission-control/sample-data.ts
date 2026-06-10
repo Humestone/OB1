@@ -162,17 +162,24 @@ export const ASK_DEMO = {
   note: "Preview answer — in the finished version this is generated live from Company Memory.",
 };
 
+/*
+ * Spine navigation. Phase B: real destinations.
+ * - Cockpit is the surface route (/mission-control).
+ * - Approvals/Runs/Ask/Gates/System health jump to sections on the cockpit.
+ * - Company Memory routes into the folded memory app (legacy chrome until Phase C).
+ * - Evidence has no surface yet, so it stays an inert scaffold item (no href).
+ */
 export const NAV = {
   primary: [
-    { label: "Cockpit", icon: "◳", active: true },
-    { label: "Approvals", icon: "✓", active: false },
-    { label: "Runs", icon: "▷", active: false },
-    { label: "Ask Open Brain", icon: "✦", active: false },
-    { label: "Evidence", icon: "❏", active: false },
+    { label: "Cockpit", icon: "◳", href: "/mission-control" },
+    { label: "Approvals", icon: "✓", href: "/mission-control#approvals" },
+    { label: "Runs", icon: "▷", href: "/mission-control#runs" },
+    { label: "Ask Open Brain", icon: "✦", href: "/mission-control#ask" },
+    { label: "Evidence", icon: "❏" },
   ],
   surfaces: [
-    { label: "Company Memory", icon: "◇", active: false },
-    { label: "Gates", icon: "⊘", active: false },
-    { label: "System health", icon: "♥", active: false },
+    { label: "Company Memory", icon: "◇", href: "/" },
+    { label: "Gates", icon: "⊘", href: "/mission-control#gates" },
+    { label: "System health", icon: "♥", href: "/mission-control#health" },
   ],
 };

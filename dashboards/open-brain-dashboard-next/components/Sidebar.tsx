@@ -6,6 +6,7 @@ import { HumeStoneMark } from "@/components/HumeStoneMark";
 import { RestrictedToggle } from "@/components/RestrictedToggle";
 
 const nav = [
+  { href: "/mission-control", label: "Mission Control", icon: CockpitIcon },
   { href: "/", label: "Dashboard", icon: DashboardIcon },
   { href: "/workbench", label: "Workbench", icon: WorkbenchIcon },
   { href: "/thoughts", label: "Thoughts", icon: ThoughtsIcon },
@@ -102,6 +103,16 @@ export function Sidebar({
         </form>
       </div>
     </aside>
+  );
+}
+
+function CockpitIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+      <circle cx="9" cy="9" r="7.25" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9 1.75v3M9 13.25v3M1.75 9h3M13.25 9h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }
 

@@ -8,6 +8,8 @@
  */
 
 import { useState } from "react";
+import Link from "next/link";
+import { Spine, type SpineGroup } from "./shell/Spine";
 import {
   HERO,
   KPIS,
@@ -25,6 +27,11 @@ import {
   type Health,
   type Gate,
 } from "./sample-data";
+
+const SPINE_GROUPS: SpineGroup[] = [
+  { items: NAV.primary },
+  { label: "Surfaces", items: NAV.surfaces },
+];
 
 type CockpitProps = {
   hero?: typeof HERO;
@@ -81,7 +88,6 @@ export default function Cockpit({
   isLive = false,
 }: CockpitProps = {}) {
   const [range, setRange] = useState<"Today" | "7 days" | "28 days">("Today");
-  const [active, setActive] = useState("Cockpit");
   const [query, setQuery] = useState("");
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<AskResponse | null>(null);
@@ -111,49 +117,21 @@ export default function Cockpit({
     <div className="mc-root">
       <div className="mc-shell">
         {/* ---------------- sidebar ---------------- */}
-        <nav className="mc-nav">
-          <div className="mc-brand">
-            <div className="mc-brand-mark">HS</div>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: "-0.01em" }}>
-                Mission Control
-              </div>
-              <div style={{ fontSize: 11, color: "rgba(242,239,229,0.42)" }}>HumeStone · Stone</div>
-            </div>
-          </div>
-
-          {NAV.primary.map((n) => (
-            <button
-              key={n.label}
-              className="mc-nav-item"
-              data-active={active === n.label}
-              onClick={() => setActive(n.label)}
+        <Spine
+          mark="HS"
+          title="Mission Control"
+          subtitle="HumeStone · Stone"
+          groups={SPINE_GROUPS}
+          footer={
+            <div
+              className="mc-caption"
+              style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 7 }}
             >
-              <span style={{ width: 16, textAlign: "center", opacity: 0.8 }}>{n.icon}</span>
-              {n.label}
-            </button>
-          ))}
-
-          <div className="mc-nav-group">Surfaces</div>
-          {NAV.surfaces.map((n) => (
-            <button
-              key={n.label}
-              className="mc-nav-item"
-              data-active={active === n.label}
-              onClick={() => setActive(n.label)}
-            >
-              <span style={{ width: 16, textAlign: "center", opacity: 0.8 }}>{n.icon}</span>
-              {n.label}
-            </button>
-          ))}
-
-          <div style={{ marginTop: "auto", paddingTop: 16 }}>
-            <div className="mc-caption" style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 7 }}>
               <span className="mc-dot" style={{ ["--mc-tone" as string]: isLive ? "#3ddc97" : "#7c8cff" }} />
               {isLive ? "Live · Company Memory" : "Preview · sample data"}
             </div>
-          </div>
-        </nav>
+          }
+        />
 
         {/* ---------------- main ---------------- */}
         <div className="mc-main">
@@ -247,7 +225,7 @@ export default function Cockpit({
           </div>
 
           {/* Ask Open Brain */}
-          <div className="mc-ask" style={{ padding: 22, marginBottom: 28 }}>
+          <div id="ask" className="mc-ask" style={{ padding: 22, marginBottom: 28, scrollMarginTop: 24 }}>
             <div className="mc-eyebrow" style={{ marginBottom: 12 }}>
               <span style={{ color: "#ff8a4c" }}>✦</span> Ask Open Brain
             </div>
@@ -308,29 +286,49 @@ export default function Cockpit({
                     </div>
                     {answer.results.length > 0 && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-                        {answer.results.map((r, i) => (
-                          <div
-                            key={r.id || i}
-                            style={{
-                              padding: "10px 12px",
-                              borderRadius: 10,
-                              background: "rgba(255,255,255,0.03)",
-                              border: "1px solid rgba(255,255,255,0.07)",
-                            }}
-                          >
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600 }}>{r.title}</div>
-                              {r.date && (
-                                <div className="mc-caption" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
-                                  {new Date(r.date).toLocaleDateString()}
-                                </div>
-                              )}
+                        {answer.results.map((r, i) => {
+                          const cardStyle: React.CSSProperties = {
+                            display: "block",
+                            padding: "10px 12px",
+                            borderRadius: 10,
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.07)",
+                            color: "inherit",
+                            textDecoration: "none",
+                          };
+                          const inner = (
+                            <>
+                              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600 }}>{r.title}</div>
+                                {r.date && (
+                                  <div className="mc-caption" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+                                    {new Date(r.date).toLocaleDateString()}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="mc-caption" style={{ fontSize: 12, marginTop: 4 }}>
+                                {r.snippet}
+                              </div>
+                            </>
+                          );
+                          // Each result carries the Company Memory record id; open the
+                          // full record at /thoughts/[id]. Cards without an id (rare)
+                          // stay inert.
+                          return r.id ? (
+                            <Link
+                              key={r.id}
+                              href={`/thoughts/${r.id}`}
+                              className="mc-ask-result"
+                              style={cardStyle}
+                            >
+                              {inner}
+                            </Link>
+                          ) : (
+                            <div key={i} style={cardStyle}>
+                              {inner}
                             </div>
-                            <div className="mc-caption" style={{ fontSize: 12, marginTop: 4 }}>
-                              {r.snippet}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                     <div
@@ -350,7 +348,7 @@ export default function Cockpit({
           <div className="mc-grid-2">
             {/* left: approvals + runs */}
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <section>
+              <section id="approvals" style={{ scrollMarginTop: 24 }}>
                 <div style={{ marginBottom: 14 }}>
                   <div className="mc-eyebrow" style={{ marginBottom: 6 }}>
                     Approval inbox
@@ -376,7 +374,7 @@ export default function Cockpit({
                 </div>
               </section>
 
-              <section>
+              <section id="runs" style={{ scrollMarginTop: 24 }}>
                 <div style={{ marginBottom: 14 }}>
                   <div className="mc-eyebrow" style={{ marginBottom: 6 }}>
                     Current runs
@@ -404,7 +402,7 @@ export default function Cockpit({
 
             {/* right: gates + health */}
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <section>
+              <section id="gates" style={{ scrollMarginTop: 24 }}>
                 <div style={{ marginBottom: 14 }}>
                   <div className="mc-eyebrow" style={{ marginBottom: 6 }}>
                     Gate ledger
@@ -435,7 +433,7 @@ export default function Cockpit({
                 </div>
               </section>
 
-              <section>
+              <section id="health" style={{ scrollMarginTop: 24 }}>
                 <div style={{ marginBottom: 14 }}>
                   <div className="mc-eyebrow" style={{ marginBottom: 6 }}>
                     System health

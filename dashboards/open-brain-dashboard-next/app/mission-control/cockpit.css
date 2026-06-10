@@ -302,6 +302,15 @@
   color: var(--mc-text);
 }
 
+/* Ask result cards link to the full record (/thoughts/[id]); hover reads as clickable. */
+.mc-ask-result {
+  transition: background var(--mc-dur-fast) ease, border-color var(--mc-dur-fast) ease;
+}
+.mc-ask-result:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--mc-border-row-hover);
+}
+
 .mc-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -319,5 +328,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mc-card, .mc-glow-orb, .mc-dial-fill, .mc-row, .mc-ask-input { transition: none; }
+  .mc-card, .mc-glow-orb, .mc-dial-fill, .mc-row, .mc-ask-input, .mc-ask-result { transition: none; }
 }

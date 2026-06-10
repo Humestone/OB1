@@ -1,20 +1,36 @@
+"use client";
+
 /*
  * Spine — the persistent left navigation of the Mission Control shell.
  *
- * Phase A: presentational and token-driven. It renders the same `.mc-nav`
- * chrome the cockpit uses, but as a reusable component that accepts a real
- * item list (with optional `href`). Phase B swaps the items' `href` onto
- * Next <Link> + usePathname to make the spine route for real; nothing here
- * needs to change shape for that.
+ * Phase B: routes for real. Items with an `href` render a Next <Link>; the
+ * active item is derived from the current path via usePathname (an explicit
+ * `active` flag still wins when provided, e.g. the /design-system reference).
+ * In-page section jumps (hrefs that carry a `#`) and hrefless scaffold items
+ * never claim the active state — only a surface route does.
  */
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export type SpineItem = {
   label: string;
   icon: string;
-  /** Destination route. Phase A items may omit this (scaffold only). */
+  /** Destination route. Hrefless items render as inert scaffold buttons. */
   href?: string;
+  /** Explicit active override. When omitted, active is derived from the path. */
   active?: boolean;
 };
+
+/** Resolve whether an item is the active surface for the current path. */
+function isItemActive(item: SpineItem, pathname: string): boolean {
+  if (item.active !== undefined) return item.active; // explicit override wins
+  if (!item.href || item.href.includes("#")) return false; // scaffold or in-page jump
+  const base = item.href;
+  return base === "/"
+    ? pathname === "/"
+    : pathname === base || pathname.startsWith(`${base}/`);
+}
 
 export type SpineGroup = {
   /** Optional uppercase group label, e.g. "Surfaces". */
@@ -32,28 +48,28 @@ export type SpineProps = {
   footer?: React.ReactNode;
 };
 
-function SpineLink({ item }: { item: SpineItem }) {
+function SpineLink({ item, active }: { item: SpineItem; active: boolean }) {
   const content = (
     <>
-      <span aria-hidden="true" style={{ width: 16, opacity: 0.8 }}>
+      <span aria-hidden="true" style={{ width: 16, textAlign: "center", opacity: 0.8 }}>
         {item.icon}
       </span>
       {item.label}
     </>
   );
 
-  // A real anchor when we have a destination (forward-compatible with Phase B
-  // routing); an inert button for scaffold-only items.
+  // A real Next <Link> when we have a destination (client-side routing + hash
+  // jumps); an inert button for scaffold-only items.
   if (item.href) {
     return (
-      <a
+      <Link
         className="mc-nav-item"
         href={item.href}
-        data-active={item.active ? "true" : undefined}
-        aria-current={item.active ? "page" : undefined}
+        data-active={active ? "true" : undefined}
+        aria-current={active ? "page" : undefined}
       >
         {content}
-      </a>
+      </Link>
     );
   }
 
@@ -61,8 +77,8 @@ function SpineLink({ item }: { item: SpineItem }) {
     <button
       type="button"
       className="mc-nav-item"
-      data-active={item.active ? "true" : undefined}
-      aria-current={item.active ? "page" : undefined}
+      data-active={active ? "true" : undefined}
+      aria-current={active ? "page" : undefined}
     >
       {content}
     </button>
@@ -76,6 +92,8 @@ export function Spine({
   groups,
   footer,
 }: SpineProps) {
+  const pathname = usePathname();
+
   return (
     <nav className="mc-nav" aria-label="Mission Control">
       <div className="mc-brand">
@@ -94,7 +112,7 @@ export function Spine({
         <div key={group.label ?? `group-${gi}`}>
           {group.label ? <div className="mc-nav-group">{group.label}</div> : null}
           {group.items.map((item) => (
-            <SpineLink key={item.label} item={item} />
+            <SpineLink key={item.label} item={item} active={isItemActive(item, pathname)} />
           ))}
         </div>
       ))}
