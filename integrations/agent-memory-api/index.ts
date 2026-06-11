@@ -29,6 +29,7 @@ const SUPABASE_URL = safeEnv("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = safeEnv("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENROUTER_API_KEY = safeEnv("OPENROUTER_API_KEY")!;
 let MCP_ACCESS_KEY = safeEnv("MCP_ACCESS_KEY")!;
+let AGENT_MEMORY_ACCESS_KEY = safeEnv("AGENT_MEMORY_ACCESS_KEY");
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 let AGENT_MEMORY_READ_ONLY = parseBooleanEnv(safeEnv("AGENT_MEMORY_READ_ONLY"));
 let AGENT_MEMORY_ALLOW_QUERY_KEY = parseBooleanEnv(
@@ -57,6 +58,7 @@ function db() {
 type AgentMemoryAppTestRuntime = {
   supabase?: SupabaseClientLike;
   mcpAccessKey?: string;
+  agentMemoryAccessKey?: string;
   readOnly?: boolean;
   allowQueryKey?: boolean;
   allowedScope?: {
@@ -70,6 +72,9 @@ export function configureAgentMemoryAppForTest(
 ) {
   if (runtime.supabase) supabase = runtime.supabase;
   if (runtime.mcpAccessKey !== undefined) MCP_ACCESS_KEY = runtime.mcpAccessKey;
+  if (runtime.agentMemoryAccessKey !== undefined) {
+    AGENT_MEMORY_ACCESS_KEY = runtime.agentMemoryAccessKey;
+  }
   if (runtime.readOnly !== undefined) AGENT_MEMORY_READ_ONLY = runtime.readOnly;
   if (runtime.allowQueryKey !== undefined) {
     AGENT_MEMORY_ALLOW_QUERY_KEY = runtime.allowQueryKey;
@@ -301,6 +306,15 @@ function auth(c: { req: { raw: Request; url: string } }) {
   const provided = selectAccessKey(c.req.raw.headers, c.req.url, {
     allowQueryKey: AGENT_MEMORY_ALLOW_QUERY_KEY,
   });
+  // Dedicated read-surface key is preferred when set; the shared
+  // MCP_ACCESS_KEY fallback is retained until Stone-side harnesses
+  // migrate (design decision D1 — full decouple is a later increment).
+  if (
+    AGENT_MEMORY_ACCESS_KEY &&
+    accessKeyMatches(provided, AGENT_MEMORY_ACCESS_KEY)
+  ) {
+    return true;
+  }
   return accessKeyMatches(provided, MCP_ACCESS_KEY);
 }
 
