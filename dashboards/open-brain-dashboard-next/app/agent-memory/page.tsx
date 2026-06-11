@@ -13,6 +13,7 @@ import {
 } from "@/components/AgentMemoryBadges";
 import { FormattedDate } from "@/components/FormattedDate";
 import type { AgentMemoryReviewAction } from "@/lib/types";
+import { isGovernanceReadOnly } from "@/lib/governance";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function AgentMemoryPage({
   const projectId = params.project_id ?? defaults.projectId;
   const status = params.review_status ?? "pending";
   const limit = parseInt(params.limit || "50", 10);
+  const governanceReadOnly = isGovernanceReadOnly();
 
   let data;
   let error: string | null = null;
@@ -55,6 +57,9 @@ export default async function AgentMemoryPage({
 
   async function reviewAction(formData: FormData) {
     "use server";
+    if (isGovernanceReadOnly()) {
+      return;
+    }
     const { apiKey } = await requireSessionOrRedirect();
     const memoryId = String(formData.get("memory_id") || "");
     const action = String(formData.get("action") || "") as AgentMemoryReviewAction;
@@ -119,6 +124,11 @@ export default async function AgentMemoryPage({
       </div>
 
       {error && <p className="text-danger text-sm">{error}</p>}
+      {governanceReadOnly && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Agent Memory review actions are unavailable in the read-only governance pilot.
+        </div>
+      )}
 
       <div className="ob1-glass-panel overflow-x-auto">
         <table className="w-full min-w-[980px] text-sm">
@@ -186,29 +196,35 @@ export default async function AgentMemoryPage({
                     <FormattedDate date={memory.freshness.created_at} />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      <form action={reviewAction}>
-                        <input type="hidden" name="memory_id" value={memory.memory_id} />
-                        <input type="hidden" name="action" value="evidence_only" />
-                        <button className="border border-border px-2 py-1 text-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary">
-                          Evidence
-                        </button>
-                      </form>
-                      <form action={reviewAction}>
-                        <input type="hidden" name="memory_id" value={memory.memory_id} />
-                        <input type="hidden" name="action" value="confirm" />
-                        <button className="border border-success/30 px-2 py-1 text-xs text-success hover:bg-success/10">
-                          Confirm
-                        </button>
-                      </form>
-                      <form action={reviewAction}>
-                        <input type="hidden" name="memory_id" value={memory.memory_id} />
-                        <input type="hidden" name="action" value="reject" />
-                        <button className="border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10">
-                          Reject
-                        </button>
-                      </form>
-                    </div>
+                    {governanceReadOnly ? (
+                      <div className="text-right text-xs text-amber-200">
+                        Review unavailable
+                      </div>
+                    ) : (
+                      <div className="flex justify-end gap-2">
+                        <form action={reviewAction}>
+                          <input type="hidden" name="memory_id" value={memory.memory_id} />
+                          <input type="hidden" name="action" value="evidence_only" />
+                          <button className="border border-border px-2 py-1 text-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary">
+                            Evidence
+                          </button>
+                        </form>
+                        <form action={reviewAction}>
+                          <input type="hidden" name="memory_id" value={memory.memory_id} />
+                          <input type="hidden" name="action" value="confirm" />
+                          <button className="border border-success/30 px-2 py-1 text-xs text-success hover:bg-success/10">
+                            Confirm
+                          </button>
+                        </form>
+                        <form action={reviewAction}>
+                          <input type="hidden" name="memory_id" value={memory.memory_id} />
+                          <input type="hidden" name="action" value="reject" />
+                          <button className="border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10">
+                            Reject
+                          </button>
+                        </form>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))

@@ -105,6 +105,30 @@ Or connect the folder to Vercel via the dashboard. Set the environment variables
 > [!TIP]
 > The free Vercel tier is sufficient. The dashboard makes server-side API calls to your Open Brain REST endpoint — there's no heavy compute.
 
+### Step 5 (alternative): Deploy to Cloudflare Workers (optional)
+
+If you're already on Cloudflare for the [`open-brain-rest`](../../integrations/cloudflare-rest-worker/) gateway, you can host the dashboard on the same platform via the [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) adapter. The older `@cloudflare/next-on-pages` adapter caps at Next 15.5.x and doesn't support this dashboard's Next 16.
+
+The repo ships the two config files this needs out of the box (`open-next.config.ts` and `wrangler.jsonc`); rename the Worker in `wrangler.jsonc` if you want something other than `ob-dashboard`.
+
+```bash
+# 1. Make sure .env has NEXT_PUBLIC_API_URL set — it's read at *build*
+#    time and baked into the client bundle.
+npx opennextjs-cloudflare build
+
+# 2. First-time deploy creates the Worker.
+npx opennextjs-cloudflare deploy
+
+# 3. Set SESSION_SECRET as a *runtime* secret on the deployed Worker.
+#    (NEXT_PUBLIC_API_URL is build-time only, so no Worker secret for it.)
+wrangler secret put SESSION_SECRET --name ob-dashboard
+```
+
+The dashboard ends up at `https://ob-dashboard.<your-cf-subdomain>.workers.dev`.
+
+> [!TIP]
+> `NEXT_PUBLIC_API_URL` is build-time, `SESSION_SECRET` is runtime. If you change the API URL later you have to rebuild and redeploy; rotating the session secret only needs `wrangler secret put`.
+
 ## Expected Outcome
 
 When working correctly:
@@ -188,6 +212,8 @@ Agent Memory pages also call these endpoints on `agent-memory-api`:
 > [!NOTE]
 > If your Open Brain instance doesn't have all these endpoints (e.g., no smart-ingest or duplicates), those pages will show errors but the core pages (dashboard, browse, search, detail) will still work.
 
+<!-- -->
+
 > [!IMPORTANT]
 > OB1's real `thoughts.id` values are UUID strings. The dashboard treats thought IDs as strings end to end so detail links, workflow updates, audit deletes, and duplicate resolution work against production Supabase rows.
 
@@ -228,6 +254,16 @@ AGENT_MEMORY_API_URL=http://127.0.0.1:3022
 ```
 
 Do not enable `OB1_DEMO_AUTH_BYPASS` in shared previews or production. It exists so repeatable screenshot and video generation can run without putting real API keys in browser automation.
+
+### Agent Memory Read-Only Governance Guard
+
+Set `OB1_GOVERNANCE_READ_ONLY=true` for local governance pilots. In this mode, Agent Memory list/detail pages render read-only notices, hide review controls, and server actions return before calling `PATCH /memories/:id/review`.
+
+Verify locally:
+
+```bash
+npm run test:agent-memory
+```
 
 ## Tech Stack
 

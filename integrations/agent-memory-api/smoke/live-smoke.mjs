@@ -5,6 +5,11 @@ const accessKey = process.env.OB1_AGENT_MEMORY_KEY || process.env.MCP_ACCESS_KEY
 if (!accessKey) {
   fail("Set OB1_AGENT_MEMORY_KEY or MCP_ACCESS_KEY.");
 }
+if (isTruthy(process.env.OB1_AGENT_MEMORY_READ_ONLY) || isTruthy(process.env.AGENT_MEMORY_READ_ONLY)) {
+  fail(
+    "live-smoke.mjs is write-heavy and cannot run in read-only mode. Use the read-only health/auth smoke flow instead.",
+  );
+}
 
 const workspaceId = process.env.OB1_AGENT_MEMORY_WORKSPACE_ID || "ob1-staging";
 const projectId = process.env.OB1_AGENT_MEMORY_PROJECT_ID || "agent-memory-api-smoke";
@@ -231,6 +236,11 @@ function requiredEnv(name) {
   const value = process.env[name];
   if (!value) fail(`Set ${name}.`);
   return value;
+}
+
+function isTruthy(value) {
+  if (!value) return false;
+  return ["1", "true", "yes", "on"].includes(String(value).trim().toLowerCase());
 }
 
 function assert(condition, message) {
