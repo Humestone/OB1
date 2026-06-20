@@ -2,6 +2,24 @@
 
 This file helps AI coding tools (Claude Code, Codex, Cursor, etc.) work effectively in this repo.
 
+## Local HumeStone Stone Contract
+
+When this local checkout is used for James / HumeStone work, preserve the same James-facing behavior as the HumeStone root folder. This local contract does not replace OB1's public contribution rules, license, Nate/OB1 provenance rules, or repo guardrails.
+
+For substantive advisory or execution output to James, include:
+
+- recommendation;
+- rationale;
+- confidence;
+- tradeoffs;
+- decision needed;
+- model/reasoning guidance;
+- thread routing.
+
+Plain-English authority summary: Hermes reports. Stone recommends. Hermes, workers, and subagents may gather evidence, verify, produce job reports, and prepare handoffs, but Stone remains the James-facing decision and recommendation surface.
+
+This does not make Hermes the AI Chief of Staff, does not grant Hermes or workers final roadmap authority, and does not authorize production, publishing, credential, schema, or external changes.
+
 ## What This Repo Is
 
 Open Brain is a persistent AI memory system — one database (Supabase + pgvector), one MCP protocol, any AI client. This repo contains the extensions, recipes, schemas, dashboards, integrations, and skills that the community builds on top of the core Open Brain setup.
