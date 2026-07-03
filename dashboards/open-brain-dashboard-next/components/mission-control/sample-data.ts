@@ -167,7 +167,9 @@ export const ASK_DEMO = {
  * - Cockpit is the surface route (/mission-control).
  * - Approvals/Runs/Ask/Gates/System health jump to sections on the cockpit.
  * - Company Memory routes into the folded memory app (legacy chrome until Phase C).
- * - Evidence has no surface yet, so it stays an inert scaffold item (no href).
+ * - Evidence was removed 2026-07-03 (surface convergence F5): it never had a
+ *   surface, and an inert nav item reads as a broken one. Re-add with a real
+ *   href if an evidence surface ships.
  */
 export const NAV = {
   primary: [
@@ -175,7 +177,6 @@ export const NAV = {
     { label: "Approvals", icon: "✓", href: "/mission-control#approvals" },
     { label: "Runs", icon: "▷", href: "/mission-control#runs" },
     { label: "Ask Open Brain", icon: "✦", href: "/mission-control#ask" },
-    { label: "Evidence", icon: "❏" },
   ],
   surfaces: [
     { label: "Company Memory", icon: "◇", href: "/" },

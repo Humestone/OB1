@@ -102,20 +102,57 @@ export async function fetchKanbanThoughts(
     exclude_restricted?: boolean;
   }
 ): Promise<Thought[]> {
-  // Fetch tasks and ideas separately (API only supports single type filter)
-  const results: Thought[] = [];
+  // Fetch per type AND per status. The API only supports a single type
+  // filter, and the deployed REST function returns 0 rows for any
+  // comma-separated multi-status query (single status works), so we fan out
+  // one request per (type, status) pair and merge client-side.
+  const statuses = (params?.status ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const PER_PAGE = 100;
+  const MAX_PAGES = 5; // safety cap: 500 rows per (type, status) pair
+
+  async function fetchAllPages(thoughtType: string, status?: string): Promise<Thought[]> {
+    const rows: Thought[] = [];
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const sp = new URLSearchParams();
+      sp.set("page", String(page));
+      sp.set("per_page", String(PER_PAGE));
+      sp.set("sort", "importance");
+      sp.set("order", "desc");
+      sp.set("type", thoughtType);
+      if (status) sp.set("status", status);
+      if (params?.exclude_restricted !== undefined)
+        sp.set("exclude_restricted", String(params.exclude_restricted));
+      const data = await apiFetch<BrowseResponse>(apiKey, `/thoughts?${sp.toString()}`);
+      rows.push(...data.data);
+      if (data.data.length < PER_PAGE) break;
+    }
+    return rows;
+  }
+
+  const combos: [string, string | undefined][] = [];
   for (const thoughtType of ["task", "idea"]) {
-    const sp = new URLSearchParams();
-    sp.set("per_page", "100");
-    sp.set("sort", "importance");
-    sp.set("order", "desc");
-    sp.set("type", thoughtType);
-    if (params?.status) sp.set("status", params.status);
-    if (params?.exclude_restricted !== undefined)
-      sp.set("exclude_restricted", String(params.exclude_restricted));
-    const qs = sp.toString();
-    const data = await apiFetch<BrowseResponse>(apiKey, `/thoughts?${qs}`);
-    results.push(...data.data);
+    for (const status of statuses.length ? statuses : [undefined]) {
+      combos.push([thoughtType, status]);
+    }
+  }
+
+  const responses = await Promise.all(
+    combos.map(([thoughtType, status]) => fetchAllPages(thoughtType, status))
+  );
+
+  // Merge and dedupe by id (belt and braces if a record matches twice).
+  const seen = new Set<string>();
+  const results: Thought[] = [];
+  for (const batch of responses) {
+    for (const thought of batch) {
+      if (seen.has(thought.id)) continue;
+      seen.add(thought.id);
+      results.push(thought);
+    }
   }
   // Re-sort combined results by importance desc
   results.sort((a, b) => b.importance - a.importance);

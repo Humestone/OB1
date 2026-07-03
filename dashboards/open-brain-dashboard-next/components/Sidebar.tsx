@@ -11,7 +11,9 @@ const nav = [
   { href: "/workbench", label: "Workbench", icon: WorkbenchIcon },
   { href: "/thoughts", label: "Thoughts", icon: ThoughtsIcon },
   { href: "/kanban", label: "Workflow", icon: KanbanIcon },
-  { href: "/promotion-review", label: "Promotion Review", icon: PromotionReviewIcon },
+  // Promotion Review is hidden from the nav (2026-07-03 surface convergence
+  // F5): its Mac-only manifest hasn't been fed since 2026-05-19, so the page
+  // has nothing to show hosted. Re-add if the promotion workflow is rebuilt.
   { href: "/agent-memory", label: "Agent Memory", icon: MemoryIcon },
   { href: "/search", label: "Search", icon: SearchIcon },
   { href: "/audit", label: "Audit", icon: AuditIcon },
@@ -175,16 +177,6 @@ function KanbanIcon({ active }: { active: boolean }) {
       <rect x="1" y="2" width="4" height="14" rx="1" stroke="currentColor" strokeWidth="1.5" />
       <rect x="7" y="2" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
       <rect x="13" y="2" width="4" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function PromotionReviewIcon({ active }: { active: boolean }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
-      <rect x="1.5" y="2" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M5 6h8M5 9h5M5 12h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="13.5" cy="9" r="1.2" fill="currentColor" />
     </svg>
   );
 }

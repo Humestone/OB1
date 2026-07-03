@@ -1,11 +1,9 @@
-import { getIronSession, type SessionOptions } from "iron-session";
+import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { sessionOptions, type SessionData } from "./session";
 
-export interface SessionData {
-  loggedIn?: boolean;
-  restrictedUnlocked?: boolean;
-}
+export { sessionOptions, type SessionData };
 
 export class AuthError extends Error {
   constructor(message = "Unauthorized") {
@@ -30,34 +28,6 @@ export function getBrainKey(): string {
   }
   return key;
 }
-
-function shouldUseSecureCookie() {
-  if (process.env.AUTH_COOKIE_SECURE) {
-    return process.env.AUTH_COOKIE_SECURE === "true";
-  }
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
-  return appUrl.startsWith("https://") || process.env.VERCEL === "1";
-}
-
-// Fail fast if SESSION_SECRET is missing or too short
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
-  throw new Error(
-    "SESSION_SECRET env var is required and must be at least 32 characters"
-  );
-}
-
-export const sessionOptions: SessionOptions = {
-  cookieName: "open_brain_session",
-  password: SESSION_SECRET,
-  ttl: 60 * 60 * 24, // 24 hours
-  cookieOptions: {
-    httpOnly: true,
-    secure: shouldUseSecureCookie(),
-    sameSite: "lax" as const,
-    path: "/",
-  },
-};
 
 function demoAuthBypass() {
   if (process.env.OB1_DEMO_AUTH_BYPASS !== "true") return null;

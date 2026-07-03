@@ -1,7 +1,7 @@
 import "./cockpit.css";
 import Cockpit from "@/components/mission-control/Cockpit";
 import { getCockpitLive } from "@/lib/mission-control";
-import { getBrainKey } from "@/lib/auth";
+import { requireSessionOrRedirect } from "@/lib/auth";
 
 export const metadata = {
   title: "Mission Control | HumeStone",
@@ -12,12 +12,15 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function MissionControlPage() {
-  // Read-only Company Memory access via the dashboard's server-side brain key.
+  // Validate the session like the data pages do; the cockpit renders live
+  // company status and must never load without a real logged-in session.
+  const { apiKey } = await requireSessionOrRedirect();
+
   let live = null;
   try {
-    live = await getCockpitLive(getBrainKey());
+    live = await getCockpitLive(apiKey);
   } catch {
-    live = null; // missing key or fetch error → fall back to sample data
+    live = null; // fetch error → fall back to sample data
   }
 
   if (!live) return <Cockpit />;

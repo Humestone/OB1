@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getIronSession } from "iron-session";
+import { sessionOptions, type SessionData } from "@/lib/session";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (process.env.OB1_DEMO_AUTH_BYPASS === "true") {
@@ -18,13 +20,24 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for session cookie existence (iron-session encrypts it)
-  const sessionCookie = request.cookies.get("open_brain_session");
-  if (!sessionCookie?.value) {
+  // Validate the session, not just cookie existence: unseal the iron-session
+  // cookie and require loggedIn. A garbage or forged cookie fails the unseal
+  // and gets an empty session, so it redirects to /login.
+  const response = NextResponse.next();
+  try {
+    const session = await getIronSession<SessionData>(
+      request,
+      response,
+      sessionOptions
+    );
+    if (!session.loggedIn) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  } catch {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

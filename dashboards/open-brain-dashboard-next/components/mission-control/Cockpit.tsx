@@ -87,7 +87,6 @@ export default function Cockpit({
   gates = GATES,
   isLive = false,
 }: CockpitProps = {}) {
-  const [range, setRange] = useState<"Today" | "7 days" | "28 days">("Today");
   const [query, setQuery] = useState("");
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<AskResponse | null>(null);
@@ -168,35 +167,9 @@ export default function Cockpit({
               </div>
             </div>
 
-            <div
-              style={{
-                display: "inline-flex",
-                gap: 2,
-                padding: 3,
-                borderRadius: 11,
-                border: "1px solid rgba(236,229,209,0.12)",
-                background: "rgba(0,0,0,0.18)",
-              }}
-            >
-              {(["Today", "7 days", "28 days"] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRange(r)}
-                  style={{
-                    padding: "6px 13px",
-                    borderRadius: 8,
-                    fontSize: 12.5,
-                    border: 0,
-                    cursor: "pointer",
-                    background: range === r ? "#f2efe5" : "transparent",
-                    color: range === r ? "#1a1d1b" : "rgba(242,239,229,0.6)",
-                    fontWeight: range === r ? 600 : 400,
-                  }}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
+            {/* The Today/7d/28d range toggle was removed 2026-07-03 (surface
+                convergence F5): nothing read it, and a control that does
+                nothing erodes trust in the ones that do. */}
           </div>
 
           {/* KPI row */}
