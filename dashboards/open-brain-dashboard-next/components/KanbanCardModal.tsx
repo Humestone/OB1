@@ -140,7 +140,7 @@ export function KanbanCardModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1 text-xs text-danger hover:text-red-300 transition-colors"
+                className="px-3 py-1 text-xs text-danger hover:text-danger/80 transition-colors"
               >
                 Discard
               </button>
@@ -178,7 +178,7 @@ export function KanbanCardModal({
                 value={status}
                 disabled={readOnlyMode}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet focus:ring-1 focus:ring-violet/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {KANBAN_STATUSES.map((s) => (
                   <option key={s} value={s}>
@@ -198,7 +198,7 @@ export function KanbanCardModal({
                   const level = PRIORITY_LEVELS.find((p) => p.label === e.target.value);
                   if (level) setImportance(level.value);
                 }}
-                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet focus:ring-1 focus:ring-violet/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {PRIORITY_LEVELS.map((p) => (
                   <option key={p.label} value={p.label}>
@@ -214,7 +214,7 @@ export function KanbanCardModal({
                 value={type}
                 disabled={readOnlyMode}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-bg-hover border border-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:border-violet focus:ring-1 focus:ring-violet/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {THOUGHT_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -236,7 +236,7 @@ export function KanbanCardModal({
               value={content}
               disabled={readOnlyMode}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-bg-hover border border-border rounded-lg px-3 py-2 text-sm text-text-primary leading-relaxed resize-none focus:outline-none focus:border-violet/40 min-h-[100px] max-h-[40vh] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-bg-hover border border-border rounded-lg px-3 py-2 text-sm text-text-primary leading-relaxed resize-none focus:outline-none focus:border-violet focus:ring-1 focus:ring-violet/30 min-h-[100px] max-h-[40vh] disabled:opacity-50 disabled:cursor-not-allowed"
               rows={4}
             />
           </div>
@@ -263,7 +263,7 @@ export function KanbanCardModal({
                   onArchive(thought.id);
                   onClose();
                 }}
-                className="text-sm text-text-muted hover:text-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-sm text-text-muted hover:text-warning transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {readOnlyMode ? "Archive Blocked" : "Archive"}
               </button>
@@ -295,7 +295,7 @@ export function KanbanCardModal({
               disabled={readOnlyMode || !hasChanges}
               className={`px-4 py-1.5 text-sm rounded-lg transition-colors ${
                 hasChanges && !readOnlyMode
-                  ? "bg-violet text-white hover:bg-violet/80"
+                  ? "cm-btn-brand"
                   : "bg-bg-hover text-text-muted cursor-not-allowed"
               }`}
             >
@@ -337,7 +337,7 @@ export function KanbanCardModal({
               onDelete(thought.id);
               onClose();
             }}
-            className="px-4 py-1.5 text-sm rounded-lg bg-danger text-white hover:bg-danger/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 text-sm rounded-lg bg-danger text-bg-primary hover:bg-danger/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {readOnlyMode ? "Delete Blocked" : "Delete"}
           </button>

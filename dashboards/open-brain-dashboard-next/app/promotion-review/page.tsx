@@ -20,24 +20,28 @@ const STATUS_LABELS: Record<string, string> = {
   all: "All",
 };
 
+/* Colour = concept: in-pipeline=info(blue), healthy=good(emerald),
+   instruction-grade=neutral(violet), stale=attention(amber, decaying),
+   disputed/rejected=blocked(coral, active conflict); evidence-only and
+   superseded are settled states and stay monochrome. */
 function statusBadgeClass(status: string): string {
   switch (status) {
     case "candidate":
-      return "border-sky-500/35 bg-sky-500/12 text-sky-200";
+      return "border-info/35 bg-info/12 text-info";
     case "confirmed":
-      return "border-emerald-500/35 bg-emerald-500/12 text-emerald-200";
+      return "border-success/35 bg-success/12 text-success";
     case "instruction-grade":
-      return "border-violet/45 bg-violet/15 text-violet-200";
+      return "border-neutral/45 bg-neutral/15 text-neutral";
     case "evidence-only":
-      return "border-zinc-500/35 bg-zinc-500/10 text-zinc-200";
+      return "border-border bg-bg-elevated text-text-secondary";
     case "stale":
-      return "border-amber-500/35 bg-amber-500/12 text-amber-200";
+      return "border-warning/35 bg-warning/12 text-warning";
     case "superseded":
-      return "border-slate-500/35 bg-slate-500/12 text-slate-200";
+      return "border-border bg-bg-elevated text-text-secondary";
     case "disputed":
-      return "border-orange-500/35 bg-orange-500/12 text-orange-200";
+      return "border-danger/35 bg-danger/12 text-danger";
     case "rejected":
-      return "border-rose-500/35 bg-rose-500/12 text-rose-200";
+      return "border-danger/35 bg-danger/12 text-danger";
     default:
       return "border-border bg-bg-surface text-text-secondary";
   }
@@ -96,11 +100,11 @@ export default async function PromotionReviewPage({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">Promotion Review Queue</h1>
-        <p className="text-sm text-text-secondary">
+        <h1 className="cm-hero">Promotion Review Queue</h1>
+        <p className="cm-caption">
           Local read-only queue backed by the Phase 3 manifest contract.
         </p>
-        <p className="text-xs text-amber-200">
+        <p className="text-xs text-warning">
           No write controls are available in this view.
         </p>
       </div>
@@ -110,7 +114,7 @@ export default async function PromotionReviewPage({
           <Link
             key={status}
             href={statusUrl(status)}
-            className={`border px-3 py-1.5 text-sm transition-colors ${
+            className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
               statusFilter === status
                 ? "border-violet/30 bg-violet-surface text-violet"
                 : "border-border bg-bg-surface text-text-secondary hover:bg-bg-hover hover:text-text-primary"
@@ -121,7 +125,7 @@ export default async function PromotionReviewPage({
         ))}
         <Link
           href={statusUrl("all")}
-          className={`border px-3 py-1.5 text-sm transition-colors ${
+          className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
             statusFilter === "all"
               ? "border-violet/30 bg-violet-surface text-violet"
               : "border-border bg-bg-surface text-text-secondary hover:bg-bg-hover hover:text-text-primary"
@@ -137,7 +141,7 @@ export default async function PromotionReviewPage({
         </div>
       ) : (
         <>
-          <div className="ob1-glass-panel p-4 text-xs text-text-muted space-y-1">
+          <div className="cm-card p-4 text-xs text-text-muted space-y-1">
             <p>
               <span className="text-text-secondary">Manifest:</span>{" "}
               <code className="break-all">{manifestPath}</code>
@@ -152,7 +156,7 @@ export default async function PromotionReviewPage({
             </p>
           </div>
 
-          <div className="ob1-glass-panel overflow-x-auto">
+          <div className="cm-card overflow-x-auto">
             <table className="w-full min-w-[1150px] text-sm">
               <thead>
                 <tr className="border-b border-border text-xs uppercase tracking-wider text-text-muted">
@@ -181,7 +185,7 @@ export default async function PromotionReviewPage({
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex border px-2 py-1 text-xs ${statusBadgeClass(
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs ${statusBadgeClass(
                             item.status,
                           )}`}
                         >
@@ -195,7 +199,7 @@ export default async function PromotionReviewPage({
                             href={item.source_refs.github_issue.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-2 inline-block text-xs text-violet hover:text-violet-300"
+                            className="mt-2 inline-block text-xs text-violet hover:text-violet-dim"
                           >
                             Issue #{item.source_refs.github_issue.number}
                           </a>

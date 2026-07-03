@@ -81,7 +81,7 @@ export default function AuditPage() {
   if (loading && !data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Audit</h1>
+        <h1 className="cm-hero">Audit</h1>
         <div className="flex items-center gap-2 text-text-muted text-sm">
           <div className="w-4 h-4 border-2 border-violet/30 border-t-violet rounded-full animate-spin" />
           Loading low-quality thoughts...
@@ -96,8 +96,8 @@ export default function AuditPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Audit</h1>
-          <p className="text-text-secondary text-sm">
+          <h1 className="cm-hero mb-2.5">Audit</h1>
+          <p className="cm-caption">
             Review low quality thoughts (score &lt; 30)
             {data && ` | ${data.total.toLocaleString()} total`}
           </p>
@@ -131,7 +131,7 @@ export default function AuditPage() {
       {error && <p className="text-danger text-sm">{error}</p>}
 
       {data && (
-        <div className="bg-bg-surface border border-border rounded-lg overflow-hidden">
+        <div className="cm-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-text-muted text-xs uppercase tracking-wider">

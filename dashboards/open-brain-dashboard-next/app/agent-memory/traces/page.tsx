@@ -42,7 +42,7 @@ export default async function RecallTracePage({
           Back to Agent Memory
         </Link>
         <p className="ob1-section-label mt-4">Retrieval Debugging</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Recall Trace</h1>
+        <h1 className="cm-hero mt-2">Recall Trace</h1>
         </div>
         <p className="max-w-md text-sm text-text-secondary md:text-right">
           Debug what an agent asked for, what OB1 returned, and what the agent used.

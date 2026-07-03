@@ -87,13 +87,19 @@ export default async function AgentMemoryPage({
 
   return (
     <div className="space-y-4">
+      <div>
+        <h1 className="cm-hero mb-2.5">Agent Memory</h1>
+        <p className="cm-caption">
+          Review what agents have learned before it can be trusted.
+        </p>
+      </div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           {STATUSES.map((item) => (
             <Link
               key={item}
               href={statusUrl(item)}
-              className={`border px-3 py-1.5 text-sm transition-colors ${
+              className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
                 status === item
                   ? "border-violet/30 bg-violet-surface text-violet"
                   : "border-border bg-bg-surface text-text-secondary hover:bg-bg-hover hover:text-text-primary"
@@ -104,7 +110,7 @@ export default async function AgentMemoryPage({
           ))}
           <Link
             href={statusUrl("all")}
-            className={`border px-3 py-1.5 text-sm transition-colors ${
+            className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
               status === "all"
                 ? "border-violet/30 bg-violet-surface text-violet"
                 : "border-border bg-bg-surface text-text-secondary hover:bg-bg-hover hover:text-text-primary"
@@ -132,12 +138,12 @@ export default async function AgentMemoryPage({
 
       {error && <p className="text-danger text-sm">{error}</p>}
       {governanceReadOnly && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
           Agent Memory review actions are unavailable in the read-only governance pilot.
         </div>
       )}
 
-      <div className="ob1-glass-panel overflow-x-auto">
+      <div className="cm-card overflow-x-auto">
         <table className="w-full min-w-[980px] text-sm">
           <thead>
             <tr className="border-b border-border text-xs uppercase tracking-wider text-text-muted">
@@ -204,7 +210,7 @@ export default async function AgentMemoryPage({
                   </td>
                   <td className="px-4 py-3">
                     {governanceReadOnly ? (
-                      <div className="text-right text-xs text-amber-200">
+                      <div className="text-right text-xs text-warning">
                         Review unavailable
                       </div>
                     ) : (

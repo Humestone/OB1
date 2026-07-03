@@ -48,7 +48,7 @@ export default async function ThoughtDetailPage({
           </p>
           <Link
             href="/thoughts"
-            className="px-4 py-2 bg-violet hover:bg-violet-dim text-white text-sm rounded-lg transition-colors"
+            className="cm-btn-brand px-4 py-2 text-sm"
           >
             Back to Thoughts
           </Link>
@@ -99,7 +99,7 @@ export default async function ThoughtDetailPage({
           <div className="flex items-center gap-3 mb-2 flex-wrap">
             <TypeBadge type={thought.type} />
             {thought.status && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border bg-violet/15 text-violet border-violet/20">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-bg-elevated text-text-secondary border-border">
                 {thought.status}
               </span>
             )}
@@ -145,10 +145,8 @@ export default async function ThoughtDetailPage({
       {(topics.length > 0 ||
         tags.length > 0 ||
         Object.keys(meta).length > 0) && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-primary mb-3">
-            Metadata
-          </h3>
+        <div className="cm-card p-5">
+          <h3 className="cm-eyebrow mb-3.5">Metadata</h3>
           {topics.length > 0 && (
             <div className="mb-3">
               <span className="text-xs text-text-muted">Topics: </span>
@@ -156,7 +154,7 @@ export default async function ThoughtDetailPage({
                 {topics.map((t) => (
                   <span
                     key={t}
-                    className="px-2 py-0.5 rounded bg-violet-surface text-violet text-xs"
+                    className="px-2 py-0.5 rounded bg-bg-elevated text-text-secondary text-xs"
                   >
                     {t}
                   </span>
@@ -202,15 +200,18 @@ export default async function ThoughtDetailPage({
       {/* Reflections */}
       {reflections.length > 0 && (
         <div>
-          <h3 className="text-lg font-medium mb-3">Reflections</h3>
+          <div className="mb-4">
+            <p className="cm-eyebrow mb-2">Reflections</p>
+            <h3 className="cm-section-head">What was decided or learned</h3>
+          </div>
           <div className="space-y-3">
             {reflections.map((r) => (
               <div
                 key={r.id}
-                className="bg-bg-surface border border-border rounded-lg p-4"
+                className="cm-row p-4"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs text-violet font-medium">
+                  <span className="text-xs text-neutral font-medium">
                     {r.reflection_type}
                   </span>
                   <span className="text-xs text-text-muted">

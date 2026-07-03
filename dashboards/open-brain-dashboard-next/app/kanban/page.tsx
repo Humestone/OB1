@@ -10,8 +10,8 @@ export default async function KanbanPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold mb-1">Workflow</h1>
-        <p className="text-text-secondary text-sm">
+        <h1 className="cm-hero mb-2.5">Workflow</h1>
+        <p className="cm-caption">
           Track tasks and ideas through your workflow
         </p>
       </div>

@@ -98,7 +98,7 @@ export function DeleteModal({
           <button
             onClick={handleConfirm}
             disabled={confirming}
-            className="px-4 py-2 text-sm font-medium text-white bg-danger/80 hover:bg-danger rounded-lg transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-bg-primary bg-danger/80 hover:bg-danger rounded-lg transition-colors disabled:opacity-50"
           >
             {confirming ? "Deleting..." : "Delete"}
           </button>

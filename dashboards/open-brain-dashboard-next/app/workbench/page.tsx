@@ -16,8 +16,8 @@ export default async function WorkbenchPage() {
     <div className="flex min-h-[calc(100vh-3rem)] flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Workbench</h1>
-          <p className="text-text-secondary text-sm">
+          <h1 className="cm-hero mb-2.5">Workbench</h1>
+          <p className="cm-caption">
             Stone live control surface
           </p>
         </div>

@@ -52,7 +52,7 @@ export function ThoughtEditor({
           </button>
         </div>
         {readOnly && (
-          <p className="mb-3 text-xs text-amber-200">
+          <p className="mb-3 text-xs text-warning">
             Editing is unavailable during the read-only governance pilot.
           </p>
         )}
@@ -125,7 +125,7 @@ export function ThoughtEditor({
               ? "Blocked by read-only governance pilot"
               : "Save thought changes"
           }
-          className="px-4 py-2 text-sm font-medium bg-violet hover:bg-violet-dim text-white rounded-lg transition-colors"
+          className="cm-btn-brand px-4 py-2 text-sm"
         >
           {readOnly ? "Save Blocked" : "Save"}
         </button>

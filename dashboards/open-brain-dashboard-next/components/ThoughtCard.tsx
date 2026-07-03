@@ -2,22 +2,29 @@ import Link from "next/link";
 import type { Thought } from "@/lib/types";
 import { FormattedDate } from "@/components/FormattedDate";
 
+/*
+ * Colour = concept: the five data accents are reserved for status semantics
+ * (good / attention / blocked / info / neutral). Thought TYPE is a category,
+ * not a status, so type badges are quiet monochrome chips and the label
+ * carries the meaning. The one exception: decisions are the load-bearing
+ * record type in Company Memory, so they keep the neutral (violet) accent.
+ */
 const typeColors: Record<string, string> = {
-  idea: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  task: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  person_note: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-  reference: "bg-slate-500/15 text-slate-400 border-slate-500/20",
-  decision: "bg-violet/15 text-violet border-violet/20",
-  lesson: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-  meeting: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
-  journal: "bg-pink-500/15 text-pink-400 border-pink-500/20",
+  idea: "bg-bg-elevated text-text-secondary border-border",
+  task: "bg-bg-elevated text-text-secondary border-border",
+  person_note: "bg-bg-elevated text-text-secondary border-border",
+  reference: "bg-bg-elevated text-text-secondary border-border",
+  decision: "bg-neutral/15 text-neutral border-neutral/20",
+  lesson: "bg-bg-elevated text-text-secondary border-border",
+  meeting: "bg-bg-elevated text-text-secondary border-border",
+  journal: "bg-bg-elevated text-text-secondary border-border",
 };
 
 export function TypeBadge({ type }: { type: string }) {
   const colors = typeColors[type] || typeColors.reference;
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colors}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors}`}
     >
       {type}
     </span>
@@ -37,7 +44,7 @@ export function ThoughtCard({
       : thought.content;
 
   const inner = (
-    <div className="bg-bg-surface border border-border rounded-lg p-4 hover:border-violet/30 transition-colors">
+    <div className="cm-row p-4">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2">
           <TypeBadge type={thought.type} />

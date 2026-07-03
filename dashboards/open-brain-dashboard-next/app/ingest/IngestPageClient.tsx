@@ -5,10 +5,12 @@ import { AddToBrain } from "@/components/AddToBrain";
 import type { IngestionJob } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 
+/* Colour = concept: in-flight=info(blue), needs-you=attention(amber),
+   done=good(emerald), failed=blocked(coral). Never brand amber on data. */
 const statusColor: Record<string, string> = {
   complete: "text-success",
-  dry_run_complete: "text-violet",
-  executing: "text-violet",
+  dry_run_complete: "text-info",
+  executing: "text-info",
   extracting: "text-warning",
   pending: "text-warning",
   failed: "text-danger",
@@ -44,15 +46,15 @@ export function IngestPageClient({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold mb-1">Add to Brain</h1>
-        <p className="text-text-secondary text-sm">
+        <h1 className="cm-hero mb-2.5">Add to Brain</h1>
+        <p className="cm-caption">
           Paste a thought, notes, or source text. Open Brain will decide whether
           to save one thought or extract several.
         </p>
       </div>
 
       {/* Unified input */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
+      <div className="cm-dock p-5">
         <AddToBrain
           rows={6}
           showModeControl={true}
@@ -64,7 +66,10 @@ export function IngestPageClient({
 
       {/* Job history */}
       <div>
-        <h2 className="text-lg font-medium mb-3">Recent Activity</h2>
+        <div className="mb-4">
+          <p className="cm-eyebrow mb-2">Recent activity</p>
+          <h2 className="cm-section-head">Ingestion jobs</h2>
+        </div>
         {loading ? (
           <div className="flex items-center gap-2 text-text-muted text-sm">
             <div className="w-4 h-4 border-2 border-violet/30 border-t-violet rounded-full animate-spin" />

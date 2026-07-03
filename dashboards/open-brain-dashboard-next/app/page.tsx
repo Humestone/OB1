@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   } catch (err) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="cm-hero">Company Memory</h1>
         <div className="bg-danger/10 border border-danger/30 rounded-lg p-4 text-danger text-sm">
           Failed to load dashboard data. Check API connection.
           <br />
@@ -37,10 +37,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold mb-1">Dashboard</h1>
-        <p className="text-text-secondary text-sm">
-          Overview of your second brain
+      <div className="flex flex-col gap-2.5">
+        <h1 className="cm-hero">Company Memory</h1>
+        <p className="cm-caption">
+          Overview of your second brain — what it holds and what just landed.
         </p>
       </div>
 
@@ -48,10 +48,12 @@ export default async function DashboardPage() {
 
       <KanbanSummary />
 
-      {/* Add to Brain */}
-      <div>
-        <h2 className="text-lg font-medium mb-1">Add to Brain</h2>
-        <p className="text-text-secondary text-sm mb-3">
+      {/* Add to Brain — the memory surface's dock, framed like the Ask dock */}
+      <div className="cm-dock p-5">
+        <h2 className="cm-eyebrow mb-3">
+          <span style={{ color: "var(--mc-brand)" }}>✦</span> Add to Brain
+        </h2>
+        <p className="cm-caption mb-3.5">
           Paste a thought, notes, or source text. Open Brain decides whether to
           save one thought or extract several.
         </p>
@@ -60,7 +62,11 @@ export default async function DashboardPage() {
 
       {/* Recent activity */}
       <div>
-        <h2 className="text-lg font-medium mb-3">Recent Activity</h2>
+        <div className="mb-4">
+          <p className="cm-eyebrow mb-2">Recent activity</p>
+          <h2 className="cm-section-head">What just landed</h2>
+          <p className="cm-caption">The latest captures into the brain.</p>
+        </div>
         <div className="space-y-3">
           {recent.data.map((thought) => (
             <ThoughtCard key={thought.id} thought={thought} />

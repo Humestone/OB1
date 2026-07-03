@@ -70,12 +70,12 @@ export default async function AgentMemoryDetailPage({
             Back to Agent Memory
           </Link>
           <p className="ob1-section-label mt-4">Memory Inspector</p>
-          <h1 className="mt-2 max-w-4xl truncate text-2xl font-semibold tracking-tight">
+          <h1 className="cm-hero mt-2 max-w-4xl truncate">
             {memory.summary}
           </h1>
         </div>
         {governanceReadOnly ? (
-          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+          <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
             Review actions are unavailable in the read-only governance pilot.
           </div>
         ) : (

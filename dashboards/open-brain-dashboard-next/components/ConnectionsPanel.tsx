@@ -66,7 +66,7 @@ export function ConnectionsPanel({
             <Link
               key={c.id}
               href={`/thoughts/${c.id}`}
-              className="block p-3 rounded-lg border border-border hover:border-violet/50 transition-colors"
+              className="block cm-row p-3"
             >
               <div className="flex items-center gap-2 mb-1">
                 <TypeBadge type={c.type} />

@@ -5,12 +5,15 @@ import Link from "next/link";
 import type { KanbanStatus } from "@/lib/types";
 import { KANBAN_STATUSES, KANBAN_LABELS } from "@/lib/types";
 
+/* Colour = concept: queued=neutral(violet), in-flight=info(blue),
+   needs-you=attention(amber), done=good(emerald); "new" is not yet in the
+   system, so it stays monochrome. */
 const STATUS_COLORS: Record<string, string> = {
-  new: "bg-slate-500/15 text-slate-400 border-slate-500/20",
-  planning: "bg-violet/15 text-violet border-violet/20",
-  active: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  review: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  done: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  new: "bg-bg-elevated text-text-secondary border-border",
+  planning: "bg-neutral/15 text-neutral border-neutral/20",
+  active: "bg-info/15 text-info border-info/20",
+  review: "bg-warning/15 text-warning border-warning/20",
+  done: "bg-success/15 text-success border-success/20",
 };
 
 export function KanbanSummary() {
@@ -37,7 +40,7 @@ export function KanbanSummary() {
 
   if (isLoading) {
     return (
-      <div className="bg-bg-surface border border-border rounded-lg p-4">
+      <div className="cm-card p-4">
         <div className="h-4 w-32 bg-bg-hover rounded animate-pulse mb-3" />
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -50,9 +53,12 @@ export function KanbanSummary() {
 
   return (
     <Link href="/kanban" className="block group">
-      <div className="bg-bg-surface border border-border rounded-lg p-4 hover:border-violet/30 transition-colors">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-medium">Workflow</h2>
+      <div className="cm-card p-4">
+        <div className="flex items-start justify-between mb-3.5">
+          <div>
+            <p className="cm-eyebrow mb-2">Workflow</p>
+            <h2 className="cm-section-head">Where work stands</h2>
+          </div>
           <span className="text-xs text-text-muted group-hover:text-violet transition-colors">
             Open workflow →
           </span>
@@ -65,7 +71,7 @@ export function KanbanSummary() {
             return (
               <span
                 key={status}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${colorClass}`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}
               >
                 {KANBAN_LABELS[status as KanbanStatus]}
                 <span className="font-bold">{count}</span>

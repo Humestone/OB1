@@ -158,7 +158,7 @@ export default function DuplicatesPage() {
   if (loading && pairs.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Duplicates</h1>
+        <h1 className="cm-hero">Duplicates</h1>
         <div className="flex items-center gap-2 text-text-muted text-sm">
           <div className="w-4 h-4 border-2 border-violet/30 border-t-violet rounded-full animate-spin" />
           Searching for near-duplicates...
@@ -171,8 +171,8 @@ export default function DuplicatesPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Duplicates</h1>
-          <p className="text-text-secondary text-sm">
+          <h1 className="cm-hero mb-2.5">Duplicates</h1>
+          <p className="cm-caption">
             Semantic near-duplicates (similarity &gt; {(threshold * 100).toFixed(0)}%)
             {!loading && ` | ${pairs.length} pairs found`}
           </p>
@@ -213,7 +213,7 @@ export default function DuplicatesPage() {
             <button
               disabled={batchProcessing}
               onClick={() => setConfirmBatch(true)}
-              className="px-4 py-1.5 text-sm font-medium bg-violet hover:bg-violet-dim text-white rounded-lg transition-colors disabled:opacity-50"
+              className="cm-btn-brand px-4 py-1.5 text-sm"
             >
               {batchProcessing ? "Processing..." : `Resolve ${selectedCount} pair${selectedCount > 1 ? "s" : ""}`}
             </button>
@@ -230,7 +230,7 @@ export default function DuplicatesPage() {
 
       {error && <p className="text-danger text-sm">{error}</p>}
       {governanceReadOnly && (
-        <p className="text-amber-200 text-sm">
+        <p className="text-warning text-sm">
           Read-only governance pilot: duplicate resolve actions are unavailable.
         </p>
       )}
@@ -250,16 +250,16 @@ export default function DuplicatesPage() {
           return (
             <div
               key={key}
-              className="bg-bg-surface border border-border rounded-lg p-4 space-y-3"
+              className="cm-card p-4 space-y-3"
             >
               {/* Header with similarity badge */}
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-warning/10 text-warning border border-warning/20">
                   {sim}% similar
                 </span>
                 <div className="flex items-center gap-3">
                   <label
-                    className={`flex items-center gap-1.5 cursor-pointer px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                    className={`flex items-center gap-1.5 cursor-pointer px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                       selections[key] === "keep_both"
                         ? "text-violet border-violet/30 bg-violet-surface"
                         : "text-text-muted border-border hover:bg-bg-hover"
@@ -284,9 +284,9 @@ export default function DuplicatesPage() {
                 <div
                   className={`bg-bg-elevated rounded-lg p-3 space-y-2 cursor-pointer border-2 transition-colors ${
                     selections[key] === "keep_a"
-                      ? "border-emerald-500/50 bg-emerald-500/5"
+                      ? "border-success/50 bg-success/5"
                       : selections[key] === "keep_b"
-                        ? "border-red-500/30 bg-red-500/5"
+                        ? "border-danger/30 bg-danger/5"
                         : "border-transparent"
                   }`}
                   onClick={() => toggleSelection(key, "keep_a")}
@@ -300,7 +300,7 @@ export default function DuplicatesPage() {
                         checked={selections[key] === "keep_a"}
                         onChange={() => toggleSelection(key, "keep_a")}
                         onClick={(e) => e.stopPropagation()}
-                        className="accent-emerald-500"
+                        className="accent-success"
                         title="Keep this, delete the other"
                       />
                       <Link
@@ -327,10 +327,10 @@ export default function DuplicatesPage() {
                     </time>
                     <div className="flex items-center gap-2">
                       {selections[key] === "keep_a" && (
-                        <span className="text-xs text-emerald-400 font-medium">Keep</span>
+                        <span className="text-xs text-success font-medium">Keep</span>
                       )}
                       {selections[key] === "keep_b" && (
-                        <span className="text-xs text-red-400 font-medium">Delete</span>
+                        <span className="text-xs text-danger font-medium">Delete</span>
                       )}
                       <button
                         disabled={governanceReadOnly || isResolving}
@@ -344,7 +344,7 @@ export default function DuplicatesPage() {
                           if (governanceReadOnly) return;
                           setConfirmDelete({ action: "keep_a", pair });
                         }}
-                        className="px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-colors disabled:opacity-30"
+                        className="px-3 py-1 text-xs font-medium text-success border border-success/20 rounded-full hover:bg-success/10 transition-colors disabled:opacity-30"
                       >
                         {governanceReadOnly ? "Keep This (Blocked)" : "Keep This"}
                       </button>
@@ -356,9 +356,9 @@ export default function DuplicatesPage() {
                 <div
                   className={`bg-bg-elevated rounded-lg p-3 space-y-2 cursor-pointer border-2 transition-colors ${
                     selections[key] === "keep_b"
-                      ? "border-emerald-500/50 bg-emerald-500/5"
+                      ? "border-success/50 bg-success/5"
                       : selections[key] === "keep_a"
-                        ? "border-red-500/30 bg-red-500/5"
+                        ? "border-danger/30 bg-danger/5"
                         : "border-transparent"
                   }`}
                   onClick={() => toggleSelection(key, "keep_b")}
@@ -372,7 +372,7 @@ export default function DuplicatesPage() {
                         checked={selections[key] === "keep_b"}
                         onChange={() => toggleSelection(key, "keep_b")}
                         onClick={(e) => e.stopPropagation()}
-                        className="accent-emerald-500"
+                        className="accent-success"
                         title="Keep this, delete the other"
                       />
                       <Link
@@ -399,10 +399,10 @@ export default function DuplicatesPage() {
                     </time>
                     <div className="flex items-center gap-2">
                       {selections[key] === "keep_b" && (
-                        <span className="text-xs text-emerald-400 font-medium">Keep</span>
+                        <span className="text-xs text-success font-medium">Keep</span>
                       )}
                       {selections[key] === "keep_a" && (
-                        <span className="text-xs text-red-400 font-medium">Delete</span>
+                        <span className="text-xs text-danger font-medium">Delete</span>
                       )}
                       <button
                         disabled={governanceReadOnly || isResolving}
@@ -416,7 +416,7 @@ export default function DuplicatesPage() {
                           if (governanceReadOnly) return;
                           setConfirmDelete({ action: "keep_b", pair });
                         }}
-                        className="px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-colors disabled:opacity-30"
+                        className="px-3 py-1 text-xs font-medium text-success border border-success/20 rounded-full hover:bg-success/10 transition-colors disabled:opacity-30"
                       >
                         {governanceReadOnly ? "Keep This (Blocked)" : "Keep This"}
                       </button>

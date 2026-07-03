@@ -217,7 +217,7 @@ export function ReflectionComposer({
               type="button"
               disabled={readOnly}
               onClick={() => removeOption(i)}
-              className="text-xs text-text-muted hover:text-red-400 transition-colors px-2"
+              className="text-xs text-text-muted hover:text-danger transition-colors px-2"
             >
               Remove
             </button>
@@ -268,7 +268,7 @@ export function ReflectionComposer({
               type="button"
               disabled={readOnly}
               onClick={() => removeFactor(i)}
-              className="text-xs text-text-muted hover:text-red-400 transition-colors px-2"
+              className="text-xs text-text-muted hover:text-danger transition-colors px-2"
             >
               Remove
             </button>
@@ -292,7 +292,7 @@ export function ReflectionComposer({
         />
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <div className="flex gap-2">
         <button
@@ -303,7 +303,7 @@ export function ReflectionComposer({
               ? "Blocked by read-only governance pilot"
               : "Save reflection"
           }
-          className="px-4 py-2 text-sm font-medium bg-violet hover:bg-violet-dim text-white rounded-lg transition-colors disabled:opacity-50"
+          className="cm-btn-brand px-4 py-2 text-sm"
         >
           {readOnly
             ? "Save Reflection (Blocked)"

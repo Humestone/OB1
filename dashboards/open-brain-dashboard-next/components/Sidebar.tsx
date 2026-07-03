@@ -41,14 +41,16 @@ export function Sidebar({
         ${isOpen ? "!flex" : ""}
       `}
     >
-      <div className="px-5 py-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-3" onClick={onClose}>
-          <HumeStoneMark className="h-9 w-9 text-xs" />
+      <div className="px-4 py-5 border-b border-border-subtle">
+        <Link href="/" className="flex items-center gap-2.5" onClick={onClose}>
+          <HumeStoneMark className="h-[30px] w-[30px] text-[13px]" />
           <div className="min-w-0">
-            <span className="block text-text-primary font-semibold text-lg tracking-tight">
+            <span className="block text-text-primary font-semibold text-[14.5px] tracking-[-0.01em]">
               Company Memory
             </span>
-            <span className="ob1-brand-kicker">HumeStone</span>
+            <span className="block text-[11px] text-[var(--mc-text-5)]">
+              HumeStone · Second brain
+            </span>
           </div>
         </Link>
       </div>
@@ -62,16 +64,13 @@ export function Sidebar({
               key={href}
               href={href}
               onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                active
-                  ? "border border-violet/25 bg-violet-surface text-violet"
-                  : "border border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-hover"
-              }`}
+              data-active={active ? "true" : "false"}
+              className="cm-nav-item"
             >
               <Icon active={active} />
               {label}
               {governanceReadOnly && href === "/agent-memory" && (
-                <span className="ml-auto text-[10px] uppercase tracking-wide text-amber-200">
+                <span className="ml-auto text-[10px] uppercase tracking-wide text-warning">
                   RO
                 </span>
               )}
@@ -82,13 +81,13 @@ export function Sidebar({
 
       <div className="px-3 py-3 border-t border-border space-y-2">
         {governanceReadOnly && (
-          <div className="rounded border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+          <div className="rounded border border-warning/30 bg-warning/10 px-3 py-2 text-[11px] text-warning">
             Read-only governance pilot
           </div>
         )}
         <div className="px-3 pb-2">
           <p className="ob1-brand-stamp">HumeStone</p>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-text-muted/70">
+          <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-text-muted">
             Company memory layer
           </p>
         </div>
@@ -108,7 +107,7 @@ export function Sidebar({
 
 function CockpitIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <circle cx="9" cy="9" r="7.25" stroke="currentColor" strokeWidth="1.5" />
       <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.5" />
       <path d="M9 1.75v3M9 13.25v3M1.75 9h3M13.25 9h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -118,7 +117,7 @@ function CockpitIcon({ active }: { active: boolean }) {
 
 function DashboardIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <rect x="1" y="1" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
       <rect x="10" y="1" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
       <rect x="1" y="10" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
@@ -129,7 +128,7 @@ function DashboardIcon({ active }: { active: boolean }) {
 
 function ThoughtsIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <path d="M3 4.5h12M3 9h8M3 13.5h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
@@ -137,7 +136,7 @@ function ThoughtsIcon({ active }: { active: boolean }) {
 
 function WorkbenchIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <rect x="2" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
       <path d="M5 7h3M10 7h3M5 11h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
@@ -146,7 +145,7 @@ function WorkbenchIcon({ active }: { active: boolean }) {
 
 function SearchIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <circle cx="7.5" cy="7.5" r="5" stroke="currentColor" strokeWidth="1.5" />
       <path d="M11.5 11.5L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
@@ -155,7 +154,7 @@ function SearchIcon({ active }: { active: boolean }) {
 
 function AuditIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <path d="M9 1.5L2 5v4c0 4.4 3 8.5 7 9.5 4-1 7-5.1 7-9.5V5L9 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
     </svg>
   );
@@ -163,7 +162,7 @@ function AuditIcon({ active }: { active: boolean }) {
 
 function DuplicatesIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <rect x="1" y="3" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" />
       <rect x="6" y="4" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" fill="var(--bg-surface)" />
     </svg>
@@ -172,7 +171,7 @@ function DuplicatesIcon({ active }: { active: boolean }) {
 
 function KanbanIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <rect x="1" y="2" width="4" height="14" rx="1" stroke="currentColor" strokeWidth="1.5" />
       <rect x="7" y="2" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.5" />
       <rect x="13" y="2" width="4" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
@@ -182,7 +181,7 @@ function KanbanIcon({ active }: { active: boolean }) {
 
 function PromotionReviewIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <rect x="1.5" y="2" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
       <path d="M5 6h8M5 9h5M5 12h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <circle cx="13.5" cy="9" r="1.2" fill="currentColor" />
@@ -192,7 +191,7 @@ function PromotionReviewIcon({ active }: { active: boolean }) {
 
 function MemoryIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <path d="M9 2.25c3.3 0 6 1.2 6 2.7v8.1c0 1.5-2.7 2.7-6 2.7s-6-1.2-6-2.7v-8.1c0-1.5 2.7-2.7 6-2.7Z" stroke="currentColor" strokeWidth="1.5" />
       <path d="M15 5c0 1.5-2.7 2.7-6 2.7S3 6.5 3 5M15 9c0 1.5-2.7 2.7-6 2.7S3 10.5 3 9" stroke="currentColor" strokeWidth="1.5" />
     </svg>
@@ -201,7 +200,7 @@ function MemoryIcon({ active }: { active: boolean }) {
 
 function AddIcon({ active }: { active: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-text-primary" : "text-text-muted"}>
       <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.5" />
       <path d="M9 5.5v7M5.5 9h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>

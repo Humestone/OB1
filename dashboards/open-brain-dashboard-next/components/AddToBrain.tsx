@@ -186,7 +186,7 @@ export function AddToBrain({
     <div className="space-y-3">
       <form onSubmit={handleSubmit} className="space-y-3">
         {readOnly && (
-          <p className="text-xs text-amber-200">
+          <p className="text-xs text-warning">
             Read-only governance pilot: Add to Brain is disabled.
           </p>
         )}
@@ -290,7 +290,7 @@ export function AddToBrain({
                   ? "Blocked by read-only governance pilot"
                   : "Add this content to Open Brain"
               }
-              className="px-5 py-2.5 bg-violet hover:bg-violet-dim text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cm-btn-brand px-5 py-2.5 text-sm"
             >
               {readOnly ? "Add Blocked" : submitting ? "Adding..." : "Add to Brain"}
             </button>
@@ -411,7 +411,7 @@ export function AddToBrain({
                     ? "Blocked by read-only governance pilot"
                     : "Commit extracted thoughts"
                 }
-                className="px-4 py-2 bg-violet hover:bg-violet-dim text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="cm-btn-brand px-4 py-2 text-sm"
               >
                 {readOnly
                   ? "Review & Execute (Blocked)"

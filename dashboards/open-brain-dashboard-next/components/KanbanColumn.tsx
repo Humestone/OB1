@@ -7,13 +7,16 @@ import type { Thought, KanbanStatus } from "@/lib/types";
 import { KANBAN_LABELS } from "@/lib/types";
 import { KanbanCard } from "@/components/KanbanCard";
 
+/* Colour = concept: queued=neutral(violet), in-flight=info(blue),
+   needs-you=attention(amber), done=good(emerald); "new" and "archived" sit
+   outside the live flow, so they stay monochrome. */
 const COLUMN_ACCENT: Record<string, string> = {
-  new: "border-t-slate-500",
-  planning: "border-t-violet",
-  active: "border-t-blue-500",
-  review: "border-t-amber-500",
-  done: "border-t-emerald-500",
-  archived: "border-t-slate-600",
+  new: "border-t-border-subtle",
+  planning: "border-t-neutral",
+  active: "border-t-info",
+  review: "border-t-warning",
+  done: "border-t-success",
+  archived: "border-t-border-subtle",
 };
 
 function collapseKey(status: string): string {
@@ -82,7 +85,7 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col rounded-lg border border-border border-t-2 ${accentClass} bg-bg-primary flex-1 min-w-[120px] md:min-w-0 transition-colors max-h-[calc(100vh-130px)] md:max-h-[calc(100vh-220px)] ${
+      className={`flex flex-col rounded-xl border border-border border-t-2 ${accentClass} bg-bg-surface flex-1 min-w-[120px] md:min-w-0 transition-colors max-h-[calc(100vh-130px)] md:max-h-[calc(100vh-220px)] ${
         isOver ? "bg-violet/5 border-violet/20" : ""
       }`}
     >

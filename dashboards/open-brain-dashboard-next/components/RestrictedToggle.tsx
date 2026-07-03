@@ -69,13 +69,13 @@ export function RestrictedToggle() {
         onClick={() => (unlocked ? handleLock() : setShowModal(true))}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors w-full ${
           unlocked
-            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
+            ? "bg-warning/10 text-warning border border-warning/20 hover:bg-warning/20"
             : "text-text-muted hover:text-text-secondary hover:bg-bg-hover"
         }`}
         title={unlocked ? "Click to hide restricted content" : "Unlock restricted content"}
       >
         {unlocked ? (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-amber-400">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-warning">
             <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
             <path d="M5 7V5a3 3 0 016 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
@@ -125,7 +125,7 @@ export function RestrictedToggle() {
               <button
                 onClick={handleUnlock}
                 disabled={loading || !passphrase.trim()}
-                className="px-4 py-2 text-sm bg-violet hover:bg-violet-dim text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                className="cm-btn-brand px-4 py-2 text-sm"
               >
                 {loading ? "Verifying..." : "Unlock"}
               </button>

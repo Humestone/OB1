@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SidebarShell } from "@/components/SidebarShell";
+import { MemoryBreadcrumb } from "@/components/MemoryBreadcrumb";
 import {
   GOVERNANCE_READ_ONLY_NOTICE,
   isGovernanceReadOnly,
@@ -44,9 +45,10 @@ export default function RootLayout({
         </div>
         <SidebarShell governanceReadOnly={governanceReadOnly} />
         <main className="flex-1 md:ml-56 min-h-screen pt-12 md:pt-0">
+          <MemoryBreadcrumb />
           {governanceReadOnly && (
             <div className="mx-auto max-w-7xl px-4 pt-4 md:px-8">
-              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
                 {GOVERNANCE_READ_ONLY_NOTICE}
               </div>
             </div>

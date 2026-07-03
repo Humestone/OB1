@@ -47,7 +47,7 @@ export default async function ThoughtsPage({
   } catch (err) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Thoughts</h1>
+        <h1 className="cm-hero">Thoughts</h1>
         <p className="text-danger text-sm">
           Failed to load thoughts.{" "}
           {err instanceof Error ? err.message : ""}
@@ -70,8 +70,8 @@ export default async function ThoughtsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold mb-1">Thoughts</h1>
-        <p className="text-text-secondary text-sm">
+        <h1 className="cm-hero mb-2.5">Thoughts</h1>
+        <p className="cm-caption">
           {data.total.toLocaleString()} total thoughts
         </p>
       </div>
@@ -85,7 +85,7 @@ export default async function ThoughtsPage({
       />
 
       {/* Table */}
-      <div className="bg-bg-surface border border-border rounded-lg overflow-hidden">
+      <div className="cm-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-text-muted text-xs uppercase tracking-wider">

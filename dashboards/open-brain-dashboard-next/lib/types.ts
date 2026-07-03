@@ -52,11 +52,13 @@ export const KANBAN_COLORS: Record<KanbanStatus, string> = {
   done: "emerald",
 };
 
+/* Colour = concept: blocked(coral) for critical, attention(amber) for high,
+   neutral(violet) for medium; low stays monochrome. */
 export const PRIORITY_LEVELS = [
-  { label: "Critical", min: 80, value: 90, color: "bg-red-500", textColor: "text-red-400" },
-  { label: "High", min: 60, value: 70, color: "bg-orange-500", textColor: "text-orange-400" },
-  { label: "Medium", min: 30, value: 50, color: "bg-yellow-500", textColor: "text-yellow-400" },
-  { label: "Low", min: 0, value: 20, color: "bg-slate-500", textColor: "text-slate-400" },
+  { label: "Critical", min: 80, value: 90, color: "bg-danger", textColor: "text-danger" },
+  { label: "High", min: 60, value: 70, color: "bg-warning", textColor: "text-warning" },
+  { label: "Medium", min: 30, value: 50, color: "bg-neutral", textColor: "text-neutral" },
+  { label: "Low", min: 0, value: 20, color: "bg-text-muted", textColor: "text-text-muted" },
 ] as const;
 
 export function getPriorityLevel(importance: number) {

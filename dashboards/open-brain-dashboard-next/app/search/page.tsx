@@ -70,8 +70,8 @@ export default function SearchPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold mb-1">Search</h1>
-        <p className="text-text-secondary text-sm">
+        <h1 className="cm-hero mb-2.5">Search</h1>
+        <p className="cm-caption">
           Search across your second brain
         </p>
       </div>
@@ -103,12 +103,12 @@ export default function SearchPage() {
               <Link
                 key={r.id}
                 href={`/thoughts/${r.id}`}
-                className="block bg-bg-surface border border-border rounded-lg p-4 hover:border-violet/30 transition-colors"
+                className="block cm-row p-4"
               >
                 <div className="flex items-center gap-3 mb-2">
                   <TypeBadge type={r.type} />
                   {state.mode === "semantic" && r.similarity != null && (
-                    <span className="text-xs text-violet font-mono">
+                    <span className="text-xs text-neutral font-mono">
                       {(r.similarity * 100).toFixed(1)}% match
                     </span>
                   )}
