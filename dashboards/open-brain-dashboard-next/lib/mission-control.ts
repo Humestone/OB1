@@ -5,8 +5,10 @@ import type { Tone } from "@/components/mission-control/sample-data";
 /*
  * Mission Control — live data layer (Phase B, reworked 2026-07-03 for the
  * surface convergence fixes F3+F4).
- * Reads from Company Memory (read-only, server-side key). No writes. Falls
- * back to sample data in the page if this throws.
+ * Reads from Company Memory (read-only, server-side key). No writes. If this
+ * throws, the page renders an explicit "live status unavailable" surface; if
+ * it returns null (no STATUS RECORDs), the page renders an honest empty
+ * state. Sample data is never a fallback; preview is ?preview=1 only.
  *
  * Two sources, honestly separated:
  * - QUEUE SNAPSHOT records (written by the Mac's hourly queue sync through

@@ -4,7 +4,11 @@
  * Mission Control — redesigned cockpit (Phase A).
  * ClaudeOS-inspired principles (big glowing numbers, micro-labels, off-card
  * light, whitespace, plain-language captions) in HumeStone's own palette.
- * Static sample data; no live data, no actions. Phases B–D wire it up.
+ *
+ * Live data comes in through props (Phase B). The sample-data defaults are a
+ * design-iteration preview only: the page renders them solely behind an
+ * explicit ?preview=1 opt-in, never as a fallback for a failed live read,
+ * and the preview labels itself loudly (topbar + banner + spine footer).
  */
 
 import { useState } from "react";
@@ -137,10 +141,24 @@ export default function Cockpit({
           <div className="mc-topbar">
             <div className="mc-breadcrumb">Stone · local cockpit</div>
             <div className="mc-online">
-              <span className="mc-dot" style={{ ["--mc-tone" as string]: "#87d18a" }} />
-              Stone online
+              <span className="mc-dot" style={{ ["--mc-tone" as string]: isLive ? "#87d18a" : "#ffb454" }} />
+              {isLive ? "Stone online" : "Sample data"}
             </div>
           </div>
+
+          {/* Preview banner: the sample cockpit only renders behind an explicit
+              ?preview=1 opt-in, and it must never be mistakable for live status. */}
+          {!isLive && (
+            <div
+              className="mc-row"
+              style={{ marginBottom: 24, alignItems: "center", borderColor: "rgba(255, 180, 84, 0.35)" }}
+            >
+              <span className="mc-dot" style={{ ["--mc-tone" as string]: "#ffb454", flexShrink: 0 }} />
+              <div className="mc-caption" style={{ fontSize: 13 }}>
+                Design preview: every number and item on this screen is sample data, not live status.
+              </div>
+            </div>
+          )}
 
           {/* hero */}
           <div
