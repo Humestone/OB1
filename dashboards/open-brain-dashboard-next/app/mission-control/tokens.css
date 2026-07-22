@@ -1,0 +1,127 @@
+/*
+ * Mission Control — shared design tokens (Phase A).
+ *
+ * Single source of truth for the Mission Control aesthetic, promoted out of
+ * cockpit.css so BOTH the cockpit and (from Phase C) the Company Memory
+ * surfaces consume one palette instead of drifting between two.
+ *
+ * Vehicle: plain :root custom properties under the `--mc-*` namespace.
+ * Framework-agnostic — readable from raw CSS (cockpit.css) and from Tailwind v4
+ * arbitrary values (e.g. bg-[var(--mc-canvas)]) when memory pages are re-skinned.
+ *
+ * Provenance: our own values. The colour direction was approved by James
+ * (deep blue-black canvas, near-white text, amber/emerald/violet on data only,
+ * light from off-card). Inspiration only — no copied code or branding.
+ *
+ * Promotion contract: every value below is byte-identical to the literal it
+ * replaced in cockpit.css, so consuming these tokens is a computed no-op.
+ * The `--mc-*` palette names here are distinct from the per-card locals
+ * `--mc-accent` / `--mc-tone` that cockpit.css sets inline, so they never clash.
+ */
+
+:root {
+  /* ---- canvas & off-card light ------------------------------------------ */
+  --mc-canvas: #0e1016;
+  --mc-wash-amber: rgba(255, 138, 76, 0.08);
+  --mc-wash-blue: rgba(124, 140, 255, 0.07);
+  --mc-wash-violet: rgba(167, 139, 250, 0.03);
+  /* composite canvas background (washes + base) */
+  --mc-canvas-bg:
+    radial-gradient(1100px 520px at 100% -8%, var(--mc-wash-amber), transparent 56%),
+    radial-gradient(900px 520px at -6% 108%, var(--mc-wash-blue), transparent 60%),
+    radial-gradient(700px 420px at 50% 50%, var(--mc-wash-violet), transparent 70%),
+    var(--mc-canvas);
+
+  /* ---- surfaces (translucent white steps over canvas) ------------------- */
+  --mc-surface-0: rgba(255, 255, 255, 0.012);  /* spine background */
+  --mc-surface-1: rgba(255, 255, 255, 0.02);   /* list row base */
+  --mc-surface-2: rgba(255, 255, 255, 0.025);  /* card base */
+  --mc-surface-3: rgba(255, 255, 255, 0.035);  /* row hover / chip */
+  --mc-surface-hover: rgba(255, 255, 255, 0.05); /* nav item hover */
+  --mc-surface-inset: rgba(0, 0, 0, 0.28);     /* inputs / dark result wells */
+
+  /* ---- text steps (near-white, stepped by alpha) ------------------------ */
+  --mc-text: #eef1f7;
+  --mc-text-1: rgba(238, 241, 247, 0.72);  /* chip / secondary body */
+  --mc-text-2: rgba(238, 241, 247, 0.6);   /* online status */
+  --mc-text-3: rgba(238, 241, 247, 0.58);  /* nav item idle */
+  --mc-text-4: rgba(238, 241, 247, 0.5);   /* eyebrow / caption / dim */
+  --mc-text-5: rgba(238, 241, 247, 0.42);  /* breadcrumb */
+  --mc-text-6: rgba(238, 241, 247, 0.34);  /* nav group label */
+
+  /* ---- hairline borders ------------------------------------------------- */
+  --mc-border-1: rgba(255, 255, 255, 0.07);  /* spine edge / row */
+  --mc-border-2: rgba(255, 255, 255, 0.08);  /* card */
+  --mc-border-3: rgba(255, 255, 255, 0.12);  /* input / chip */
+  --mc-border-row-hover: rgba(255, 255, 255, 0.14);
+  --mc-border-strong: rgba(255, 255, 255, 0.16); /* card hover */
+
+  /* ---- accent tones — colour = concept, only ever on data --------------- */
+  --mc-good: #3ddc97;       /* healthy / live / in-sync */
+  --mc-attention: #ffb454;  /* needs you */
+  --mc-blocked: #ff7a7a;    /* held / blocked */
+  --mc-info: #7c8cff;       /* informational / workers */
+  --mc-neutral: #a78bfa;    /* secondary / content queue */
+
+  /* ---- brand amber (the one warm hue; identity, washes, focus) ---------- */
+  --mc-brand: #ff8a4c;
+  --mc-brand-light: #ffc371;
+  --mc-brand-dark: #d97757;
+  --mc-brand-ink: #2a1407;   /* text on amber surfaces */
+  --mc-brand-mark: linear-gradient(160deg, #ffc371, #ff8a4c 50%, #d97757);
+  --mc-brand-active-bar: linear-gradient(180deg, #ffc371, #ff8a4c);
+  --mc-brand-bg-soft: rgba(255, 138, 76, 0.12);  /* active nav fill */
+  --mc-brand-border: rgba(255, 138, 76, 0.24);   /* ask dock edge */
+  --mc-brand-border-strong: rgba(255, 138, 76, 0.6); /* input focus edge */
+  --mc-brand-border-hover: rgba(255, 138, 76, 0.5);  /* chip hover edge */
+  --mc-ask-wash: rgba(255, 138, 76, 0.1);            /* ask dock wash */
+
+  /* ---- radius scale ----------------------------------------------------- */
+  --mc-radius-1: 9px;    /* nav item, brand mark */
+  --mc-radius-2: 12px;   /* input */
+  --mc-radius-3: 14px;   /* row, result well */
+  --mc-radius-4: 18px;   /* card, ask dock */
+  --mc-radius-pill: 999px;
+
+  /* ---- type ------------------------------------------------------------- */
+  --mc-font: var(--font-geist-sans), system-ui, sans-serif;
+  --mc-fs-kpi: 46px;       /* one big glowing number per card */
+  --mc-fs-hero: 27px;
+  --mc-fs-title: 17px;     /* section head */
+  --mc-fs-row: 14.5px;     /* row title */
+  --mc-fs-body: 14px;      /* input / nav-ish body */
+  --mc-fs-nav: 13.5px;
+  --mc-fs-caption: 12px;
+  --mc-fs-online: 11px;
+  --mc-fs-eyebrow: 10.5px;
+  --mc-fs-micro: 10px;     /* nav group label */
+  --mc-track-eyebrow: 0.2em;   /* wide-tracked instrument labels */
+  --mc-track-online: 0.12em;
+  --mc-track-tight: -0.01em;
+  --mc-track-tighter: -0.02em;
+
+  /* ---- spacing scale (4px base) ----------------------------------------- */
+  --mc-space-1: 4px;
+  --mc-space-2: 8px;
+  --mc-space-3: 12px;
+  --mc-space-4: 16px;
+  --mc-space-5: 20px;
+  --mc-space-6: 24px;
+  --mc-space-7: 28px;
+  --mc-space-8: 32px;
+
+  /* ---- motion (calm; always paired with reduced-motion guards) ---------- */
+  --mc-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --mc-dur-fast: 160ms;
+  --mc-dur-mid: 240ms;
+  --mc-dur-row: 200ms;
+  --mc-dur-dial: 700ms;
+
+  /* ---- glow & shadow ---------------------------------------------------- */
+  --mc-glow-brand: 0 6px 18px -8px rgba(255, 138, 76, 0.7);
+  --mc-glow-active: 0 0 10px rgba(255, 138, 76, 0.85);
+  --mc-card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --mc-mark-inset: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  --mc-focus-ring: 0 0 0 3px rgba(255, 138, 76, 0.14);
+  --mc-dot-glow: 7px;       /* status dot blur radius */
+}

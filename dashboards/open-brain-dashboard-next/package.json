@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:agent-memory": "node --test lib/agent-memory.test.mjs"
+    "test:agent-memory": "node --test lib/agent-memory.test.mjs",
+    "test:mission-control": "node --test lib/mission-control.test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

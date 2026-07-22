@@ -35,3 +35,35 @@ test("Agent Memory API URL prefers explicit Agent Memory endpoint before derived
     "NEXT_PUBLIC_AGENT_MEMORY_API_URL must be checked before derived fallback",
   );
 });
+
+test("Agent Memory ID reads carry dashboard workspace and project scope", () => {
+  const library = source("lib/agent-memory.ts");
+  assert.match(library, /fetchAgentMemory\(\s*apiKey: string,\s*memoryId: string,\s*scope\?:/s);
+  assert.match(library, /fetchRecallTrace\(\s*apiKey: string,\s*requestId: string,\s*scope\?:/s);
+  assert.match(library, /sp\.set\("workspace_id", scope\.workspace_id\)/);
+  assert.match(library, /sp\.set\("project_id", scope\.project_id\)/);
+
+  const detailPage = source("app/agent-memory/[id]/page.tsx");
+  assert.match(detailPage, /const defaults = agentMemoryDefaults\(\)/);
+  assert.match(detailPage, /const workspaceId = query\.workspace_id \|\| defaults\.workspaceId/);
+  assert.match(detailPage, /fetchAgentMemory\(apiKey, id, \{\s*workspace_id: workspaceId,\s*project_id: projectId,/s);
+
+  const tracesPage = source("app/agent-memory/traces/page.tsx");
+  assert.match(tracesPage, /const defaults = agentMemoryDefaults\(\)/);
+  assert.match(tracesPage, /const workspaceId = params\.workspace_id \|\| defaults\.workspaceId/);
+  assert.match(tracesPage, /fetchRecallTrace\(apiKey, requestId, \{\s*workspace_id: workspaceId,\s*project_id: projectId,/s);
+  assert.match(tracesPage, /<input type="hidden" name="workspace_id" value=\{workspaceId\} \/>/);
+
+  const listPage = source("app/agent-memory/page.tsx");
+  assert.match(listPage, /function scopedUrl\(path: string\)/);
+  assert.match(listPage, /href=\{scopedUrl\(`\/agent-memory\/\$\{memory\.memory_id\}`\)\}/);
+});
+
+test("Agent Memory requests prefer a dedicated key and retain the shared fallback", () => {
+  const library = source("lib/agent-memory.ts");
+  assert.match(
+    library,
+    /process\.env\.AGENT_MEMORY_ACCESS_KEY \|\| apiKey/,
+  );
+  assert.match(library, /"x-brain-key": agentMemoryKey/);
+});

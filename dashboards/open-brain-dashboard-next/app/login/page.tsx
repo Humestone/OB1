@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { createHash, timingSafeEqual } from "crypto";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { LoginForm } from "./LoginForm";
@@ -6,26 +7,24 @@ import { LoginForm } from "./LoginForm";
 async function loginAction(formData: FormData) {
   "use server";
 
-  const apiKey = formData.get("apiKey") as string;
-  if (!apiKey?.trim()) {
-    return { error: "API key is required" };
+  const password = formData.get("password") as string;
+  if (!password?.trim()) {
+    return { error: "Password is required" };
   }
 
-  // Validate key against health endpoint
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  try {
-    const res = await fetch(`${apiUrl}/health`, {
-      headers: { "x-brain-key": apiKey },
-    });
-    if (!res.ok) {
-      return { error: "Invalid API key or service unavailable" };
-    }
-  } catch {
-    return { error: "Could not reach API. Check your connection." };
+  const expected = process.env.DASHBOARD_PASSWORD;
+  if (!expected) {
+    return { error: "Login is not configured. Contact the administrator." };
   }
 
+  const suppliedDigest = createHash("sha256").update(password).digest();
+  const expectedDigest = createHash("sha256").update(expected).digest();
+  if (!timingSafeEqual(suppliedDigest, expectedDigest)) {
+    return { error: "Incorrect password" };
+  }
+
+  // The Company Memory key remains server-side and never enters the session.
   const session = await getSession();
-  session.apiKey = apiKey;
   session.loggedIn = true;
   await session.save();
 
@@ -34,7 +33,7 @@ async function loginAction(formData: FormData) {
 
 export default async function LoginPage() {
   const session = await getSession();
-  if (session.loggedIn && session.apiKey) {
+  if (session.loggedIn) {
     redirect("/");
   }
 
@@ -57,7 +56,7 @@ export default async function LoginPage() {
             Open Brain
           </h1>
           <p className="text-text-secondary text-sm mt-1">
-            Enter your API key to continue
+            Enter your password to continue
           </p>
         </div>
 

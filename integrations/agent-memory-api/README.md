@@ -27,7 +27,9 @@ This Edge Function exposes the v1 OB1 Agent Memory contract. OpenClaw is the fir
 - Working Open Brain setup ([guide](../../docs/01-getting-started.md))
 - [`schemas/agent-memory`](../../schemas/agent-memory/) applied
 - Supabase CLI installed
-- `OPENROUTER_API_KEY` and `MCP_ACCESS_KEY` configured as Supabase secrets
+- `OPENROUTER_API_KEY` configured as a Supabase secret
+- `AGENT_MEMORY_ACCESS_KEY` configured as the preferred dedicated API secret;
+  `MCP_ACCESS_KEY` remains an intentional temporary fallback during migration
 - For shared or production read-only deployments, `AGENT_MEMORY_READ_ONLY=true`,
   `AGENT_MEMORY_ALLOWED_WORKSPACE_ID`, and `AGENT_MEMORY_ALLOWED_PROJECT_ID`
   configured before endpoint verification.
@@ -77,6 +79,16 @@ materialized `supabase/functions/agent-memory-api` copy unless it has been
 resynchronized with `index.ts`, `auth.ts`, `policy.ts`, `read-only.ts`, and
 `deno.json`.
 
+Before deploying from a materialized package, run the package sync check:
+
+```bash
+node integrations/agent-memory-api/check-supabase-package-sync.mjs
+```
+
+The check intentionally compares only runtime files. Tests, docs, smoke
+harnesses, metadata, and `deno.lock` stay in this integration folder unless a
+separate deployment-snapshot policy says otherwise.
+
 **Done when:** `supabase functions list` shows `agent-memory-api` as active.
 
 ![Step 3](https://img.shields.io/badge/Step_3-Test_Health-1E88E5?style=for-the-badge)
@@ -117,6 +129,10 @@ Requests authenticate with either `x-brain-key: ...` or
 `Authorization: Bearer ...`. Query-string key auth is disabled by default
 because URLs can be logged by terminals, proxies, browsers, and screenshots.
 Only enable `AGENT_MEMORY_ALLOW_QUERY_KEY=true` for local throwaway testing.
+
+The API prefers `AGENT_MEMORY_ACCESS_KEY` so Agent Memory can rotate separately
+from the broader Company Memory surface. `MCP_ACCESS_KEY` remains accepted as a
+temporary compatibility fallback until all governed clients have migrated.
 
 When `AGENT_MEMORY_ALLOWED_WORKSPACE_ID` or
 `AGENT_MEMORY_ALLOWED_PROJECT_ID` is set, the API returns `403

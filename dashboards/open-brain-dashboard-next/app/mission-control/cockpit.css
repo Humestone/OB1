@@ -1,0 +1,332 @@
+/*
+ * Mission Control cockpit — scoped styles.
+ *
+ * Phase A: the colour / type / radius / motion DNA now lives in the shared
+ * token layer (./tokens.css) so the Company Memory surfaces can inherit the
+ * same aesthetic in Phase C. This file consumes those tokens; every var()
+ * resolves to the exact value it replaced, so the cockpit is unchanged.
+ *
+ * Per-card locals --mc-accent / --mc-tone are still set inline by Cockpit.tsx
+ * and are deliberately separate from the palette tokens in tokens.css.
+ */
+
+@import "./tokens.css";
+
+.mc-root {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--mc-canvas-bg);
+  color: var(--mc-text);
+  font-family: var(--mc-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.mc-shell {
+  display: flex;
+  min-height: 100%;
+}
+
+/* ---------- left nav (spine) ---------- */
+.mc-nav {
+  width: 232px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--mc-border-1);
+  padding: 22px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--mc-surface-0);
+}
+.mc-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 20px;
+}
+.mc-brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--mc-radius-1);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--mc-brand-ink);
+  background: var(--mc-brand-mark);
+  box-shadow: var(--mc-mark-inset), var(--mc-glow-brand);
+}
+.mc-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--mc-radius-1);
+  font-size: var(--mc-fs-nav);
+  color: var(--mc-text-3);
+  cursor: pointer;
+  position: relative;
+  transition: color var(--mc-dur-fast) ease, background var(--mc-dur-fast) ease;
+  background: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+}
+.mc-nav-item:hover {
+  color: var(--mc-text);
+  background: var(--mc-surface-hover);
+}
+.mc-nav-item[data-active="true"] {
+  color: var(--mc-text);
+  font-weight: 500;
+  background: var(--mc-brand-bg-soft);
+}
+.mc-nav-item[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--mc-brand-active-bar);
+  box-shadow: var(--mc-glow-active);
+}
+.mc-nav-group {
+  font-size: var(--mc-fs-micro);
+  letter-spacing: var(--mc-track-eyebrow);
+  text-transform: uppercase;
+  color: var(--mc-text-6);
+  padding: 18px 10px 8px;
+}
+
+/* ---------- main column (surface frame) ---------- */
+.mc-main {
+  flex: 1;
+  min-width: 0;
+  padding: 26px 28px 80px;
+  max-width: 1320px;
+}
+.mc-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.mc-breadcrumb {
+  font-size: var(--mc-fs-caption);
+  color: var(--mc-text-5);
+}
+.mc-online {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--mc-fs-online);
+  letter-spacing: var(--mc-track-online);
+  text-transform: uppercase;
+  color: var(--mc-text-2);
+}
+
+/* ---------- shared label / text ---------- */
+.mc-eyebrow {
+  font-size: var(--mc-fs-eyebrow);
+  letter-spacing: var(--mc-track-eyebrow);
+  text-transform: uppercase;
+  color: var(--mc-text-4);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.mc-caption {
+  font-size: var(--mc-fs-caption);
+  line-height: 1.45;
+  color: var(--mc-text-4);
+}
+.mc-hero-greeting {
+  font-size: var(--mc-fs-hero);
+  font-weight: 600;
+  letter-spacing: var(--mc-track-tight);
+  line-height: 1.12;
+}
+.mc-hero-greeting .dim {
+  color: var(--mc-text-4);
+}
+.mc-section-head {
+  font-size: var(--mc-fs-title);
+  font-weight: 600;
+  letter-spacing: var(--mc-track-tight);
+  margin-bottom: 2px;
+}
+
+/* ---------- cards ---------- */
+.mc-card {
+  position: relative;
+  border-radius: var(--mc-radius-4);
+  border: 1px solid var(--mc-border-2);
+  background: var(--mc-surface-2);
+  overflow: hidden;
+  box-shadow: var(--mc-card-inset);
+  transition: transform var(--mc-dur-mid) var(--mc-ease), border-color var(--mc-dur-mid) ease;
+}
+.mc-card-wash {
+  --mc-accent: #ff8a4c;
+}
+.mc-card-wash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--mc-accent) 18%, transparent), transparent 58%);
+}
+.mc-glow-orb {
+  position: absolute;
+  top: -60px;
+  right: -56px;
+  width: 168px;
+  height: 168px;
+  border-radius: var(--mc-radius-pill);
+  filter: blur(48px);
+  opacity: 0.36;
+  pointer-events: none;
+  background: var(--mc-accent, #ff8a4c);
+  transition: opacity var(--mc-dur-mid) ease;
+}
+.mc-kpi:hover {
+  transform: translateY(-2px);
+  border-color: var(--mc-border-strong);
+}
+.mc-kpi:hover .mc-glow-orb {
+  opacity: 0.6;
+}
+.mc-kpi-num {
+  font-size: var(--mc-fs-kpi);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: var(--mc-track-tighter);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- status pill ---------- */
+.mc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: var(--mc-radius-pill);
+  padding: 5px 12px;
+  font-size: var(--mc-fs-caption);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid color-mix(in oklab, var(--mc-tone, #3ddc97) 45%, transparent);
+  background: color-mix(in oklab, var(--mc-tone, #3ddc97) 14%, transparent);
+  color: var(--mc-tone, #3ddc97);
+}
+.mc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--mc-radius-pill);
+  background: var(--mc-tone, #3ddc97);
+  box-shadow: 0 0 var(--mc-dot-glow) var(--mc-tone, #3ddc97);
+}
+
+/* ---------- approval / run rows ---------- */
+.mc-row {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: var(--mc-radius-3);
+  border: 1px solid var(--mc-border-1);
+  background: var(--mc-surface-1);
+  transition: border-color var(--mc-dur-row) ease, background var(--mc-dur-row) ease;
+}
+.mc-row:hover {
+  border-color: var(--mc-border-row-hover);
+  background: var(--mc-surface-3);
+}
+.mc-row-title {
+  font-size: var(--mc-fs-row);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* ---------- progress dial ---------- */
+.mc-dial-track {
+  stroke: var(--mc-border-2);
+}
+.mc-dial-fill {
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--mc-dur-dial) ease;
+}
+
+/* ---------- ask open brain dock ---------- */
+.mc-ask {
+  position: relative;
+  border-radius: var(--mc-radius-4);
+  border: 1px solid var(--mc-brand-border);
+  background:
+    radial-gradient(120% 140% at 100% 0%, var(--mc-ask-wash), transparent 60%),
+    var(--mc-surface-2);
+  overflow: hidden;
+}
+.mc-ask-input {
+  width: 100%;
+  background: var(--mc-surface-inset);
+  border: 1px solid var(--mc-border-3);
+  border-radius: var(--mc-radius-2);
+  padding: 13px 15px;
+  color: var(--mc-text);
+  font-size: var(--mc-fs-body);
+  outline: none;
+  transition: border-color var(--mc-dur-fast) ease, box-shadow var(--mc-dur-fast) ease;
+}
+.mc-ask-input:focus {
+  border-color: var(--mc-brand-border-strong);
+  box-shadow: var(--mc-focus-ring);
+}
+.mc-chip {
+  font-size: var(--mc-fs-caption);
+  padding: 6px 11px;
+  border-radius: var(--mc-radius-pill);
+  border: 1px solid var(--mc-border-3);
+  background: var(--mc-surface-3);
+  color: var(--mc-text-1);
+  cursor: pointer;
+  transition: border-color var(--mc-dur-fast) ease, color var(--mc-dur-fast) ease;
+}
+.mc-chip:hover {
+  border-color: var(--mc-brand-border-hover);
+  color: var(--mc-text);
+}
+
+/* Ask result cards link to the full record (/thoughts/[id]); hover reads as clickable. */
+.mc-ask-result {
+  transition: background var(--mc-dur-fast) ease, border-color var(--mc-dur-fast) ease;
+}
+.mc-ask-result:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--mc-border-row-hover);
+}
+
+.mc-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.mc-grid-2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .mc-nav { display: none; }
+  .mc-grid-3, .mc-grid-2 { grid-template-columns: 1fr; }
+  .mc-main { padding: 20px 16px 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-card, .mc-glow-orb, .mc-dial-fill, .mc-row, .mc-ask-input, .mc-ask-result { transition: none; }
+}

@@ -18,18 +18,18 @@ export function LoginForm({
     <form action={formAction} className="space-y-4">
       <div>
         <label
-          htmlFor="apiKey"
+          htmlFor="password"
           className="block text-sm font-medium text-text-secondary mb-1.5"
         >
-          OB1 Access Key
+          Password
         </label>
         <input
-          id="apiKey"
-          name="apiKey"
+          id="password"
+          name="password"
           type="password"
           required
           autoFocus
-          placeholder="your-ob1-key"
+          autoComplete="current-password"
           className="w-full border border-border bg-bg-surface px-4 py-2.5 text-text-primary placeholder-text-muted transition focus:border-violet focus:outline-none focus:ring-1 focus:ring-violet/30"
         />
       </div>

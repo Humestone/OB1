@@ -18,6 +18,7 @@ const EXTENSION_ICONS: Record<ExtensionIcon, IconComponent> = {
 
 const coreNav: { href: string; label: string; icon: IconComponent }[] = [
   { href: "/", label: "Dashboard", icon: DashboardIcon },
+  { href: "/mission-control", label: "Mission Control", icon: MissionControlIcon },
   { href: "/thoughts", label: "Thoughts", icon: ThoughtsIcon },
   { href: "/kanban", label: "Workflow", icon: KanbanIcon },
   { href: "/agent-memory", label: "Agent Memory", icon: MemoryIcon },
@@ -128,6 +129,15 @@ function DashboardIcon({ active }: { active: boolean }) {
       <rect x="10" y="1" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
       <rect x="1" y="10" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
       <rect x="10" y="10" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function MissionControlIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={active ? "text-violet" : "text-text-muted"}>
+      <path d="M2 9h3l1.5-4 3 8 2-5 1.5 1H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
