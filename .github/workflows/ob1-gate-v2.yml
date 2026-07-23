@@ -266,11 +266,14 @@ jobs:
               [ ! -f "$f" ] && continue
 
               # Skip binary files to avoid noisy false positives.
-              if ! grep -Iq . "$f"; then
+              # A legal root filename can begin with a dash. Every grep file
+              # operand is separated from options with --, and every
+              # attacker-influenced pattern is passed with -e.
+              if ! grep -I -q -e . -- "$f"; then
                 continue
               fi
 
-              matches=$(grep -nE '(sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|SUPABASE_SERVICE_ROLE_KEY\s*=\s*"?ey)' "$f" 2>/dev/null || true)
+              matches=$(grep -nE -e '(sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|SUPABASE_SERVICE_ROLE_KEY\s*=\s*"?ey)' -- "$f" 2>/dev/null || true)
               if [ -n "$matches" ]; then
                 rule4_detail="${rule4_detail}  - \`$f\`: potential credential found\n"
                 rule4_pass=false
@@ -278,8 +281,8 @@ jobs:
               fi
 
               # Check for .env files with actual values
-              if echo "$f" | grep -qE '\.env$'; then
-                has_values=$(grep -E '^[A-Z_]+=.+' "$f" 2>/dev/null | grep -vE '=(your-|<|example|placeholder|TODO)' || true)
+              if printf '%s\n' "$f" | grep -qE -e '\.env$'; then
+                has_values=$(grep -E -e '^[A-Z_]+=.+' -- "$f" 2>/dev/null | grep -vE -e '=(your-|<|example|placeholder|TODO)' || true)
                 if [ -n "$has_values" ]; then
                   rule4_detail="${rule4_detail}  - \`$f\`: .env file appears to contain real values\n"
                   rule4_pass=false
@@ -312,7 +315,7 @@ jobs:
               fi
 
               # Check banned extensions
-              if echo "$f" | grep -qE '\.(exe|dmg|zip|tar\.gz|tar\.bz2|rar|7z|msi|pkg|deb|rpm)$'; then
+              if printf '%s\n' "$f" | grep -qE -e '\.(exe|dmg|zip|tar\.gz|tar\.bz2|rar|7z|msi|pkg|deb|rpm)$'; then
                 rule8_detail="${rule8_detail}  - \`$f\`: binary/archive files not allowed\n"
                 rule8_pass=false
               fi
@@ -360,7 +363,7 @@ jobs:
           allowed_pattern='^(recipes|schemas|dashboards|integrations|skills|primitives|extensions|docs|resources|\.github|\.gitkeep|\.gitignore|\.markdownlint)'
           while IFS= read -r f; do
             [ -z "$f" ] && continue
-            if ! echo "$f" | grep -qE "$allowed_pattern"; then
+            if ! printf '%s\n' "$f" | grep -qE -e "$allowed_pattern"; then
               bad_files="${bad_files}  - \`$f\`\n"
               rule1_pass=false
             fi
@@ -432,25 +435,25 @@ jobs:
             case "$f" in *.sql) ;; *) continue ;; esac
 
             # Check for destructive operations
-            dangerous=$(grep -niE '(DROP\s+TABLE|DROP\s+DATABASE|TRUNCATE)' "$f" 2>/dev/null || true)
+            dangerous=$(grep -niE -e '(DROP\s+TABLE|DROP\s+DATABASE|TRUNCATE)' -- "$f" 2>/dev/null || true)
             if [ -n "$dangerous" ]; then
               rule5_detail="${rule5_detail}  - \`$f\`: contains DROP/TRUNCATE statement\n"
               rule5_pass=false
             fi
 
             # Check for DELETE without WHERE
-            deletes=$(grep -niE 'DELETE\s+FROM' "$f" 2>/dev/null || true)
+            deletes=$(grep -niE -e 'DELETE\s+FROM' -- "$f" 2>/dev/null || true)
             if [ -n "$deletes" ]; then
               while IFS= read -r line; do
-                if ! echo "$line" | grep -qiE 'WHERE'; then
-                  rule5_detail="${rule5_detail}  - \`$f\` line $(echo "$line" | cut -d: -f1): DELETE FROM without WHERE clause\n"
+                if ! printf '%s\n' "$line" | grep -qiE -e 'WHERE'; then
+                  rule5_detail="${rule5_detail}  - \`$f\` line $(printf '%s\n' "$line" | cut -d: -f1): DELETE FROM without WHERE clause\n"
                   rule5_pass=false
                 fi
               done <<< "$deletes"
             fi
 
             # Check for altering/dropping core thoughts table columns
-            alter_thoughts=$(grep -niE 'ALTER\s+TABLE\s+thoughts\s+(DROP|ALTER)\s+COLUMN' "$f" 2>/dev/null || true)
+            alter_thoughts=$(grep -niE -e 'ALTER\s+TABLE\s+thoughts\s+(DROP|ALTER)\s+COLUMN' -- "$f" 2>/dev/null || true)
             if [ -n "$alter_thoughts" ]; then
               rule5_detail="${rule5_detail}  - \`$f\`: modifies core thoughts table columns (only ADD COLUMN is allowed)\n"
               rule5_pass=false
@@ -468,16 +471,16 @@ jobs:
           rule6_detail=""
           while IFS= read -r dir; do
             [ -z "$dir" ] && continue
-            category=$(echo "$dir" | cut -d'/' -f1)
-            dir_files=$(find "$dir" -type f 2>/dev/null | grep -v README.md | grep -v metadata.json || true)
+            category=$(printf '%s\n' "$dir" | cut -d'/' -f1)
+            dir_files=$(find "$dir" -type f 2>/dev/null | grep -v -e README.md | grep -v -e metadata.json || true)
 
             case "$category" in
               recipes)
-                has_artifact=$(echo "$dir_files" | grep -E '\.(sql|ts|js|py)$' || true)
+                has_artifact=$(printf '%s\n' "$dir_files" | grep -E -e '\.(sql|ts|js|py)$' || true)
                 # grep -c prints "0" itself on no match (and exits 1), so an
                 # "|| echo 0" fallback produced "0\n0", which broke the -lt
                 # comparison below and let empty recipes pass silently.
-                readme_has_steps=$(grep -c -iE '^\s*[0-9]+\.' "$dir/README.md" 2>/dev/null || true)
+                readme_has_steps=$(grep -c -iE -e '^\s*[0-9]+\.' -- "$dir/README.md" 2>/dev/null || true)
                 readme_has_steps=${readme_has_steps:-0}
                 if [ -z "$has_artifact" ] && [ "$readme_has_steps" -lt 3 ]; then
                   rule6_detail="${rule6_detail}  - \`$dir\`: recipes need code files (.sql/.ts/.js/.py) or detailed step-by-step instructions in README\n"
@@ -485,14 +488,14 @@ jobs:
                 fi
                 ;;
               schemas)
-                has_sql=$(echo "$dir_files" | grep -E '\.sql$' || true)
+                has_sql=$(printf '%s\n' "$dir_files" | grep -E -e '\.sql$' || true)
                 if [ -z "$has_sql" ]; then
                   rule6_detail="${rule6_detail}  - \`$dir\`: schemas must contain at least one .sql file\n"
                   rule6_pass=false
                 fi
                 ;;
               dashboards)
-                has_frontend=$(echo "$dir_files" | grep -E '\.(html|jsx|tsx|vue|svelte)$' || true)
+                has_frontend=$(printf '%s\n' "$dir_files" | grep -E -e '\.(html|jsx|tsx|vue|svelte)$' || true)
                 has_pkg=$(find "$dir" -name "package.json" 2>/dev/null || true)
                 if [ -z "$has_frontend" ] && [ -z "$has_pkg" ]; then
                   rule6_detail="${rule6_detail}  - \`$dir\`: dashboards must contain frontend code (.html/.jsx/.tsx/.vue/.svelte) or package.json\n"
@@ -500,14 +503,14 @@ jobs:
                 fi
                 ;;
               integrations)
-                has_code=$(echo "$dir_files" | grep -E '\.(ts|js|py)$' || true)
+                has_code=$(printf '%s\n' "$dir_files" | grep -E -e '\.(ts|js|py)$' || true)
                 if [ -z "$has_code" ]; then
                   rule6_detail="${rule6_detail}  - \`$dir\`: integrations must contain code files (.ts/.js/.py)\n"
                   rule6_pass=false
                 fi
                 ;;
               skills)
-                has_skill=$(echo "$dir_files" | grep -iE '(^|/)(SKILL\.md|[^/]+[.-]skill\.md)$' || true)
+                has_skill=$(printf '%s\n' "$dir_files" | grep -iE -e '(^|/)(SKILL\.md|[^/]+[.-]skill\.md)$' || true)
                 if [ -z "$has_skill" ]; then
                   rule6_detail="${rule6_detail}  - \`$dir\`: skills must contain a plain-text skill file (\`SKILL.md\`, \`*.skill.md\`, or \`*-skill.md\`)\n"
                   rule6_pass=false
@@ -525,8 +528,8 @@ jobs:
                 ;;
               extensions)
                 # Extensions must have both SQL and code files
-                has_sql=$(echo "$dir_files" | grep -E '\.sql$' || true)
-                has_code=$(echo "$dir_files" | grep -E '\.(ts|js|py)$' || true)
+                has_sql=$(printf '%s\n' "$dir_files" | grep -E -e '\.sql$' || true)
+                has_code=$(printf '%s\n' "$dir_files" | grep -E -e '\.(ts|js|py)$' || true)
                 if [ -z "$has_sql" ]; then
                   rule6_detail="${rule6_detail}  - \`$dir\`: extensions must contain at least one .sql file\n"
                   rule6_pass=false
@@ -546,7 +549,7 @@ jobs:
           fi
 
           # ─── Rule 7: PR format ───
-          if echo "$PR_TITLE" | grep -qE '^\[(recipes|schemas|dashboards|integrations|skills|primitives|extensions|docs)\] '; then
+          if printf '%s\n' "$PR_TITLE" | grep -qE -e '^\[(recipes|schemas|dashboards|integrations|skills|primitives|extensions|docs)\] '; then
             pass_check "PR format" "Title follows \`[category] Description\` format"
           else
             fail_check "PR format" "PR title must start with \`[recipes]\`, \`[schemas]\`, \`[dashboards]\`, \`[integrations]\`, \`[skills]\`, \`[primitives]\`, \`[extensions]\`, or \`[docs]\` followed by a space and description"
@@ -565,13 +568,13 @@ jobs:
             readme="$dir/README.md"
             missing_sections=""
 
-            if ! grep -qi 'prerequisite' "$readme"; then
+            if ! grep -qi -e 'prerequisite' -- "$readme"; then
               missing_sections="${missing_sections}Prerequisites, "
             fi
-            if ! grep -qiE '^\s*[0-9]+\.' "$readme"; then
+            if ! grep -qiE -e '^\s*[0-9]+\.' -- "$readme"; then
               missing_sections="${missing_sections}Step-by-step instructions, "
             fi
-            if ! grep -qiE '(expected|outcome|result)' "$readme"; then
+            if ! grep -qiE -e '(expected|outcome|result)' -- "$readme"; then
               missing_sections="${missing_sections}Expected outcome, "
             fi
 
@@ -609,7 +612,7 @@ jobs:
 
               # (b) Check that the README links to the primitive
               if [ -f "$readme" ]; then
-                if ! grep -q "primitives/$prim" "$readme"; then
+                if ! grep -Fq -e "primitives/$prim" -- "$readme"; then
                   rule10_detail="${rule10_detail}  - \`$dir/README.md\`: declares dependency on primitive \`$prim\` but does not link to it\n"
                   rule10_pass=false
                 fi
@@ -629,7 +632,7 @@ jobs:
 
               # (b) Check that the README links to the skill
               if [ -f "$readme" ]; then
-                if ! grep -q "skills/$skill" "$readme"; then
+                if ! grep -Fq -e "skills/$skill" -- "$readme"; then
                   rule10_detail="${rule10_detail}  - \`$dir/README.md\`: declares dependency on skill \`$skill\` but does not link to it\n"
                   rule10_pass=false
                 fi
@@ -661,10 +664,10 @@ jobs:
             case "$f" in *.md|*.ts|*.js) ;; *) continue ;; esac
 
             # Check for old local MCP config pattern
-            local_mcp=$(grep -niE '(claude_desktop_config|"command":\s*"node"|StdioServerTransport|mcpServers.*command)' "$f" 2>/dev/null || true)
+            local_mcp=$(grep -niE -e '(claude_desktop_config|"command":\s*"node"|StdioServerTransport|mcpServers.*command)' -- "$f" 2>/dev/null || true)
             if [ -n "$local_mcp" ]; then
               # Skip _template files (they might reference the pattern to warn against it)
-              if echo "$f" | grep -q '_template'; then
+              if printf '%s\n' "$f" | grep -q -e '_template'; then
                 continue
               fi
               rule14_detail="${rule14_detail}  - \`$f\`: references local MCP pattern (claude_desktop_config.json or stdio transport). Extensions must use remote MCP via Supabase Edge Functions.\n"
@@ -685,7 +688,7 @@ jobs:
           rule15_detail=""
           while IFS= read -r dir; do
             [ -z "$dir" ] && continue
-            category=$(echo "$dir" | cut -d'/' -f1)
+            category=$(printf '%s\n' "$dir" | cut -d'/' -f1)
             case "$category" in
               extensions|integrations) ;;
               *) continue ;;
@@ -693,7 +696,7 @@ jobs:
             [ ! -f "$dir/README.md" ] && continue
 
             # Check for any link to the tool audit guide
-            if ! grep -q '05-tool-audit' "$dir/README.md"; then
+            if ! grep -q -e '05-tool-audit' -- "$dir/README.md"; then
               rule15_detail="${rule15_detail}  - \`$dir/README.md\`: missing link to [MCP Tool Audit & Optimization Guide](docs/05-tool-audit.md). Required for extensions and integrations that expose MCP tools.\n"
               rule15_pass=false
             fi
@@ -745,7 +748,7 @@ jobs:
             [ ! -f "$dir/README.md" ] && continue
 
             # Extract relative markdown links (not http, not anchors)
-            links=$(grep -oE '\]\([^)]+\)' "$dir/README.md" | sed 's/^\](//' | sed 's/)$//' | grep -v '^http' | grep -v '^#' || true)
+            links=$(grep -oE -e '\]\([^)]+\)' -- "$dir/README.md" | sed 's/^\](//' | sed 's/)$//' | grep -v -e '^http' | grep -v -e '^#' || true)
 
             while IFS= read -r link; do
               [ -z "$link" ] && continue
@@ -772,8 +775,8 @@ jobs:
           reminders=""
           while IFS= read -r dir; do
             [ -z "$dir" ] && continue
-            category=$(echo "$dir" | cut -d'/' -f1)
-            folder_name=$(echo "$dir" | cut -d'/' -f2)
+            category=$(printf '%s\n' "$dir" | cut -d'/' -f1)
+            folder_name=$(printf '%s\n' "$dir" | cut -d'/' -f2)
             contrib_name=$(jq -r '.name // empty' "$dir/metadata.json" 2>/dev/null || echo "$folder_name")
             author_name=$(jq -r '.author.name // empty' "$dir/metadata.json" 2>/dev/null || echo "unknown")
             author_github=$(jq -r '.author.github // empty' "$dir/metadata.json" 2>/dev/null || echo "")
@@ -781,14 +784,14 @@ jobs:
             # Check category index file
             index_file="$category/README.md"
             if [ -f "$index_file" ]; then
-              if ! grep -q "$folder_name" "$index_file"; then
+              if ! grep -Fq -e "$folder_name" -- "$index_file"; then
                 reminders="${reminders}- [ ] Add **${contrib_name}** to [\`${index_file}\`](${index_file})\n"
               fi
             fi
 
             # Check root README community section
             if [ -f "README.md" ]; then
-              if ! grep -qi "$folder_name" "README.md"; then
+              if ! grep -Fqi -e "$folder_name" -- "README.md"; then
                 reminders="${reminders}- [ ] Add **${contrib_name}** to root README.md community contributions section\n"
               fi
             fi
@@ -796,10 +799,10 @@ jobs:
             # Check CONTRIBUTORS.md
             if [ -f "CONTRIBUTORS.md" ]; then
               found_contributor=false
-              if [ -n "$author_name" ] && grep -qi "$author_name" "CONTRIBUTORS.md"; then
+              if [ -n "$author_name" ] && grep -Fqi -e "$author_name" -- "CONTRIBUTORS.md"; then
                 found_contributor=true
               fi
-              if [ -n "$author_github" ] && grep -qi "$author_github" "CONTRIBUTORS.md"; then
+              if [ -n "$author_github" ] && grep -Fqi -e "$author_github" -- "CONTRIBUTORS.md"; then
                 found_contributor=true
               fi
               if [ "$found_contributor" = false ]; then
