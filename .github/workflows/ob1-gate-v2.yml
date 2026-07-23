@@ -716,7 +716,10 @@ jobs:
             in_scope=false
             while IFS= read -r dir; do
               [ -z "$dir" ] && continue
-              if echo "$f" | grep -qE "^${dir}/"; then
+              # Compare a literal directory prefix. Treating an untrusted
+              # folder name as an extended regex lets metacharacters such as
+              # `|` make an out-of-scope workflow file appear in scope.
+              if [[ "$f" == "$dir/"* ]]; then
                 in_scope=true
                 break
               fi
