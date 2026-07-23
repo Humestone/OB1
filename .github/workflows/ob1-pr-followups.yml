@@ -16,18 +16,8 @@ permissions:
   id-token: write
 
 jobs:
-  ignore_non_pr_gate:
-    name: Ignore Non-PR Gate Run
-    if: github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.event != 'pull_request_target'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Explain skipped follow-up
-        run: |
-          echo "OB1 PR Follow-Ups only acts on pull_request or pull_request_target gate runs."
-          echo "Received upstream event: ${{ github.event.workflow_run.event }}"
-
   followups:
-    if: github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'pull_request_target'
+    if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     concurrency:
       group: ob1-pr-followups-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
@@ -71,17 +61,15 @@ jobs:
           context_file="gate-artifact/ob1-review-context.json"
           summary_file="gate-artifact/ob1-review-summary.md"
 
-          {
-            echo "context_file=$context_file"
-            echo "summary_file=$summary_file"
-            echo "pr_number=$(jq -r '.pr_number' "$context_file")"
-            echo "author_login=$(jq -r '.author_login' "$context_file")"
-            echo "author_association=$(jq -r '.author_association' "$context_file")"
-            echo "head_sha=$(jq -r '.head_sha' "$context_file")"
-            echo "gate_failed=$(jq -r '.failed' "$context_file")"
-            echo "secret_blocked=$(jq -r '.secret_blocked' "$context_file")"
-            echo "is_draft=$(jq -r '.is_draft' "$context_file")"
-          } >> "$GITHUB_OUTPUT"
+          echo "context_file=$context_file" >> "$GITHUB_OUTPUT"
+          echo "summary_file=$summary_file" >> "$GITHUB_OUTPUT"
+          echo "pr_number=$(jq -r '.pr_number' "$context_file")" >> "$GITHUB_OUTPUT"
+          echo "author_login=$(jq -r '.author_login' "$context_file")" >> "$GITHUB_OUTPUT"
+          echo "author_association=$(jq -r '.author_association' "$context_file")" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(jq -r '.head_sha' "$context_file")" >> "$GITHUB_OUTPUT"
+          echo "gate_failed=$(jq -r '.failed' "$context_file")" >> "$GITHUB_OUTPUT"
+          echo "secret_blocked=$(jq -r '.secret_blocked' "$context_file")" >> "$GITHUB_OUTPUT"
+          echo "is_draft=$(jq -r '.is_draft' "$context_file")" >> "$GITHUB_OUTPUT"
 
       - name: Post gate summary and sync security label
         if: steps.artifact.outputs.found == 'true'
@@ -179,11 +167,9 @@ jobs:
             over_quota=true
           fi
 
-          {
-            echo "trusted=$trusted"
-            echo "open_pr_count=$open_pr_count"
-            echo "over_quota=$over_quota"
-          } >> "$GITHUB_OUTPUT"
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+          echo "open_pr_count=$open_pr_count" >> "$GITHUB_OUTPUT"
+          echo "over_quota=$over_quota" >> "$GITHUB_OUTPUT"
 
       - name: Sync maintainer triage label
         if: steps.artifact.outputs.found == 'true'
