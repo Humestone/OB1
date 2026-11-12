@@ -4,6 +4,8 @@
 
 When this local checkout is used for James / HumeStone work, preserve the same James-facing behavior as the HumeStone root folder. This local contract does not replace OB1's public contribution rules, Nate/OB1 provenance rules, or repo guardrails.
 
+Before material local work, read both `AGENTS.md` and `CLAUDE.md`. The HumeStone-local Stone contract, Linear/product guardrails, license/contribution rules, and `.planning/` guidance are split across the pair; do not assume one file contains the whole local law.
+
 For substantive advisory or execution output to James, include:
 
 - recommendation;
@@ -14,9 +16,9 @@ For substantive advisory or execution output to James, include:
 - model/reasoning guidance;
 - thread routing.
 
-Plain-English authority summary: Hermes reports. Stone recommends. Hermes, workers, and subagents may gather evidence, verify, produce job reports, and prepare handoffs, but Stone remains the James-facing decision and recommendation surface.
+Plain-English authority summary: Workers report. Stone recommends. Workers and subagents may gather evidence, verify, produce job reports, and prepare handoffs, but Stone remains the James-facing decision and recommendation surface.
 
-This does not make Hermes the AI Chief of Staff, does not grant Hermes or workers final roadmap authority, and does not authorize production, publishing, credential, schema, or external changes.
+This does not grant workers final roadmap authority and does not authorize production, publishing, credential, schema, or external changes.
 
 ## Required Step: Update Linear
 

@@ -6,6 +6,8 @@ This file helps AI coding tools (Claude Code, Codex, Cursor, etc.) work effectiv
 
 When this local checkout is used for James / HumeStone work, preserve the same James-facing behavior as the HumeStone root folder. This local contract does not replace OB1's public contribution rules, license, Nate/OB1 provenance rules, or repo guardrails.
 
+Before material local work, read both `AGENTS.md` and `CLAUDE.md`. The HumeStone-local Stone contract, Linear/product guardrails, license/contribution rules, and `.planning/` guidance are split across the pair; do not assume one file contains the whole local law.
+
 For substantive advisory or execution output to James, include:
 
 - recommendation;
@@ -16,9 +18,9 @@ For substantive advisory or execution output to James, include:
 - model/reasoning guidance;
 - thread routing.
 
-Plain-English authority summary: Hermes reports. Stone recommends. Hermes, workers, and subagents may gather evidence, verify, produce job reports, and prepare handoffs, but Stone remains the James-facing decision and recommendation surface.
+Plain-English authority summary: Workers report. Stone recommends. Workers and subagents may gather evidence, verify, produce job reports, and prepare handoffs, but Stone remains the James-facing decision and recommendation surface.
 
-This does not make Hermes the AI Chief of Staff, does not grant Hermes or workers final roadmap authority, and does not authorize production, publishing, credential, schema, or external changes.
+This does not grant workers final roadmap authority and does not authorize production, publishing, credential, schema, or external changes.
 
 ## What This Repo Is
 
@@ -56,13 +58,13 @@ Every contribution lives in its own subfolder under the right category and must 
 - **Title format:** `[category] Short description` (e.g., `[recipes] Email history import via Gmail API`, `[skills] Panning for Gold standalone skill pack`)
 - **Branch convention:** `contrib/<github-username>/<short-description>`
 - **Commit prefixes:** `[category]` matching the contribution type
-- Every PR must pass the automated review checks in `.github/workflows/ob1-review.yml` before human review
+- Every PR must pass the automated checks in `.github/workflows/ob1-gate.yml` (OB1 PR Gate) before human review
 - See `CONTRIBUTING.md` for the full review process, metadata.json template, and README requirements
 
 ## Key Files
 
 - `CONTRIBUTING.md` — Source of truth for contribution rules, metadata format, and the review process
-- `.github/workflows/ob1-review.yml` — Automated PR review
+- `.github/workflows/ob1-gate.yml` — Automated PR gate
 - `.github/metadata.schema.json` — JSON schema for metadata.json validation
 - `.github/PULL_REQUEST_TEMPLATE.md` — PR description template
 - `LICENSE.md` — FSL-1.1-MIT terms
